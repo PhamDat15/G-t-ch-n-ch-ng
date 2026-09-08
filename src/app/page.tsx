@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { seedSampleArticles } from "@/lib/seed";
 import { CATEGORIES } from "@/lib/categories";
 import HotFlightRoutes from "@/components/HotFlightRoutes";
+import VietnamWeatherWidget from "@/components/VietnamWeatherWidget";
+import TravelAdviceWidget from "@/components/TravelAdviceWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +136,12 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
+
+            {/* Widget Thời Tiết Tỉnh Thành Việt Nam Real-time Kèm Hiệu Ứng Sống Động */}
+            <VietnamWeatherWidget />
+
+            {/* Widget Chỉ Số Xê Dịch & Cẩm Nang Hôm Nay */}
+            <TravelAdviceWidget />
           </div>
 
           {/* CỘT GIỮA (Lg: col-span-6) - HERO BÀI TIÊU ĐIỂM CHÍNH & 3 BÀI PHỤ */}

@@ -81,4 +81,54 @@
     border-bottom: 1px solid #e2e8f0;
     font-style: italic;
   }
+
+  /* Hiệu ứng thời tiết CSS: Mưa rơi nhẹ & Quầng sáng mặt trời */
+  @keyframes rainfall {
+    0% {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(120px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes cloud-drift {
+    0% {
+      transform: translateX(-15%);
+    }
+    50% {
+      transform: translateX(15%);
+    }
+    100% {
+      transform: translateX(-15%);
+    }
+  }
+
+  @keyframes sun-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.85;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 1;
+    }
+  }
+
+  .animate-rain {
+    animation: rainfall 1.2s linear infinite;
+  }
+
+  .animate-drift {
+    animation: cloud-drift 8s ease-in-out infinite;
+  }
+
+  .animate-sun {
+    animation: sun-pulse 3s ease-in-out infinite;
+  }
 }
