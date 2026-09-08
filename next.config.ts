@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-sqlite3", "sharp", "mammoth"],
+  serverExternalPackages: ["pg", "sharp", "mammoth"],
   images: {
     remotePatterns: [
       {
