@@ -4,6 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import ReadingProgressBar from "@/components/ReadingProgressBar";
+import CommentSection from "@/components/CommentSection";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,12 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
 
   const article = await prisma.article.findUnique({
     where: { slug },
-    include: { category: true },
+    include: {
+      category: true,
+      comments: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
   });
 
   if (!article) {
@@ -115,6 +121,12 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
             </Link>
           </div>
         </div>
+
+        {/* Mục Bình Luận Độc Giả */}
+        <CommentSection
+          articleId={article.id}
+          initialComments={article.comments}
+        />
 
         {/* Khối Bài viết liên quan cùng chuyên mục */}
         {relatedArticles.length > 0 && (

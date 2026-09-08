@@ -4,28 +4,44 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { CATEGORIES } from "@/lib/categories";
 import ArticleTable from "@/components/ArticleTable";
+import CommentTable from "@/components/CommentTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const totalArticles = await prisma.article.count();
+  const totalComments = await prisma.comment.count();
+
   const articles = await prisma.article.findMany({
     take: 20,
     orderBy: { publishedAt: "desc" },
     include: { category: true },
   });
 
+  const comments = await prisma.comment.findMany({
+    take: 15,
+    orderBy: { createdAt: "desc" },
+    include: {
+      article: {
+        select: {
+          title: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-6">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-[#1A56DB]">
               Bàn Làm Việc Tòa Soạn
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0A2540] font-serif mt-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0A2540] font-sans mt-1">
               Bảng Điều Khiển & Quản Lý Nội Dung
             </h1>
           </div>
@@ -41,7 +57,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Các thẻ thống kê */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-white p-5 border border-slate-200 rounded-sm shadow-xs">
             <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
               Tổng số bài viết
@@ -51,10 +67,10 @@ export default async function AdminDashboard() {
 
           <div className="bg-white p-5 border border-slate-200 rounded-sm shadow-xs">
             <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
-              Số chuyên mục
+              Ý kiến độc giả (Bình luận)
             </span>
             <p className="text-3xl font-extrabold text-[#1A56DB] mt-2 font-mono">
-              {CATEGORIES.length}
+              {totalComments}
             </p>
           </div>
 
@@ -64,12 +80,12 @@ export default async function AdminDashboard() {
             </span>
             <p className="text-sm font-bold text-emerald-600 mt-3 flex items-center space-x-2">
               <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping inline-block"></span>
-              <span>Sẵn sàng tiếp nhận tài liệu</span>
+              <span>CSDL Neon PostgreSQL Active</span>
             </p>
           </div>
         </div>
 
-        {/* Bảng danh sách bài viết gần đây */}
+        {/* Bảng 1: Danh sách bài viết */}
         <div className="bg-white border border-slate-200 rounded-sm shadow-xs overflow-hidden">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
@@ -79,6 +95,21 @@ export default async function AdminDashboard() {
           </div>
 
           <ArticleTable initialArticles={articles} />
+        </div>
+
+        {/* Bảng 2: Quản lý ý kiến độc giả */}
+        <div className="bg-white border border-slate-200 rounded-sm shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+                Ý kiến độc giả mới nhất
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">Kiểm soát và xóa các phản hồi vi phạm hoặc spam</p>
+            </div>
+            <span className="text-xs text-slate-500 font-mono">Tổng cộng: {totalComments} ý kiến</span>
+          </div>
+
+          <CommentTable initialComments={comments} />
         </div>
       </main>
 
