@@ -19,12 +19,27 @@ export default function Header({ currentCategory = "" }: { currentCategory?: str
   };
 
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      // Khi cuộn quá 70px thì kích hoạt trạng thái co gọn
-      if (window.scrollY > 70) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+
+          // Sử dụng ngưỡng Hysteresis chống chớp giật (Flicker / Layout Thrashing):
+          // Phải cuộn qua 150px mới co lại, và chỉ bung ra khi đã cuộn về sát đỉnh (< 60px)
+          setIsScrolled((prev) => {
+            if (!prev && currentY > 150) {
+              return true;
+            } else if (prev && currentY < 60) {
+              return false;
+            }
+            return prev;
+          });
+
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -32,47 +47,34 @@ export default function Header({ currentCategory = "" }: { currentCategory?: str
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lấy ngày tháng tiếng Việt chuẩn
-  const today = new Date();
-  const daysOfWeek = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
-  const dayName = daysOfWeek[today.getDay()];
-  const formattedDate = `${dayName}, ngày ${String(today.getDate()).padStart(2, "0")}-${String(
-    today.getMonth() + 1
-  ).padStart(2, "0")}-${today.getFullYear()}`;
-
   return (
-    <header className="w-full sticky top-0 z-50 bg-white transition-all duration-300 shadow-xs">
-      {/* 1. Top Utility Bar: Giờ quốc tế & Thời tiết thực tế */}
-      <div
-        className={`bg-[#F8FAFC] border-b border-slate-200 text-xs text-slate-600 overflow-hidden transition-all duration-300 ${
-          isScrolled ? "max-h-0 opacity-0 border-none py-0" : "max-h-12 opacity-100 py-2"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <WorldClockWeather />
+    <>
+      {/* ========================================================================= */}
+      {/* 1. KHỐI HEADER TRÊN ĐẦU (TỰ NHIÊN CUỘN THEO TRANG, KHÔNG GÂY GIẬT NỀN) */}
+      {/* ========================================================================= */}
+      <div className="w-full bg-white border-b border-slate-200">
+        {/* Top Utility Bar: Giờ quốc tế & Thời tiết */}
+        <div className="bg-[#F8FAFC] border-b border-slate-200 text-xs text-slate-600 py-2">
+          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+            <WorldClockWeather />
 
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/admin/import"
-              className="text-[#1A56DB] hover:text-[#0F4C81] font-bold transition"
-            >
-              [ + Nhập bài viết mới ]
-            </Link>
-            <span className="text-slate-300">|</span>
-            <Link href="/admin" className="hover:text-slate-900 transition font-medium">
-              Quản trị Tòa soạn
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/admin/import"
+                className="text-[#1A56DB] hover:text-[#0F4C81] font-bold transition"
+              >
+                [ + Nhập bài viết mới ]
+              </Link>
+              <span className="text-slate-300">|</span>
+              <Link href="/admin" className="hover:text-slate-900 transition font-medium">
+                Quản trị Tòa soạn
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 2. Main Masthead: Khi cuộn xuống thì ẩn phần slogan và ô tìm kiếm lớn, chỉ giữ logo thu nhỏ trong thanh bar */}
-      <div
-        className={`max-w-7xl mx-auto px-4 overflow-hidden transition-all duration-300 ${
-          isScrolled ? "max-h-0 opacity-0 py-0" : "max-h-32 opacity-100 py-5 border-b border-slate-100"
-        }`}
-      >
-        <div className="flex flex-col md:flex-row items-center justify-between">
+        {/* Masthead Logo & Hotline */}
+        <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-baseline space-x-4">
             <Link href="/" className="group flex flex-col">
               <span className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[#0A2540] group-hover:text-[#1A56DB] transition font-sans uppercase">
@@ -112,27 +114,34 @@ export default function Header({ currentCategory = "" }: { currentCategory?: str
         </div>
       </div>
 
-      {/* 3. Sticky Navigation Bar: Tự động co gọn thành thanh điều hướng thanh mảnh khi cuộn */}
-      <nav className={`bg-[#0A2540] text-white transition-all duration-300 ${isScrolled ? "shadow-md py-0.5" : ""}`}>
+      {/* ========================================================================= */}
+      {/* 2. THANH NAVIGATION DÍNH CỐ ĐỊNH (STICKY) - CO GỌN ÊM ÁI HOÀN TOÀN KHÔNG GIẬT */}
+      {/* ========================================================================= */}
+      <nav
+        className={`w-full sticky top-0 z-50 bg-[#0A2540] text-white transition-all duration-200 ${
+          isScrolled ? "shadow-lg py-1 border-b border-slate-700/50 backdrop-blur-md bg-[#0A2540]/95" : "py-0"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-none">
           <div className="flex items-center space-x-4">
-            {/* Logo thu nhỏ xuất hiện tức thì khi cuộn trang */}
-            {isScrolled && (
-              <Link
-                href="/"
-                className="flex items-center space-x-2 py-2 pr-3 border-r border-slate-700 transition animate-fade-in"
-              >
+            {/* Logo thu nhỏ mượt mà khi cuộn xuống */}
+            <div
+              className={`overflow-hidden transition-all duration-200 flex items-center ${
+                isScrolled ? "max-w-[200px] opacity-100 pr-3 mr-2 border-r border-slate-700" : "max-w-0 opacity-0"
+              }`}
+            >
+              <Link href="/" className="whitespace-nowrap">
                 <span className="text-base font-black tracking-tight text-white uppercase font-sans hover:text-sky-300 transition">
                   GẠT CHÂN CHỐNG
                 </span>
               </Link>
-            )}
+            </div>
 
             <ul className="flex items-center space-x-1 py-0 text-sm tracking-wide font-semibold whitespace-nowrap">
               <li>
                 <Link
                   href="/"
-                  className={`inline-block py-2.5 px-3 uppercase text-xs tracking-wider transition ${
+                  className={`inline-block py-2.5 px-3 uppercase text-xs tracking-wider transition rounded-xs ${
                     !currentCategory
                       ? "bg-[#1A56DB] text-white font-bold"
                       : "text-slate-200 hover:text-white hover:bg-white/10"
@@ -148,7 +157,7 @@ export default function Header({ currentCategory = "" }: { currentCategory?: str
                   <li key={cat.slug}>
                     <Link
                       href={`/chuyen-muc/${cat.slug}`}
-                      className={`inline-block py-2.5 px-3 uppercase text-xs tracking-wider transition relative ${
+                      className={`inline-block py-2.5 px-3 uppercase text-xs tracking-wider transition rounded-xs ${
                         isActive
                           ? "bg-[#1A56DB] text-white font-bold"
                           : "text-slate-200 hover:text-white hover:bg-white/10"
@@ -174,11 +183,11 @@ export default function Header({ currentCategory = "" }: { currentCategory?: str
             )}
             <div className="hidden xl:flex items-center space-x-2 text-sky-200 font-mono text-xs">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>TIN MỚI</span>
+              <span>TIN MỚI 24/7</span>
             </div>
           </div>
         </div>
       </nav>
-    </header>
+    </>
   );
 }
