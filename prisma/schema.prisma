@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  articles    Article[]
+}
+
+model Article {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  sapo         String
+  content      String    // HTML formatted content with images and captions
+  thumbnail    String?   // URL to high-res thumbnail
+  author       String    @default("Ban Biên Tập")
+  source       String?   // Nguồn tin / Gạt chân chống
+  isFeatured   Boolean   @default(false)
+  isHero       Boolean   @default(false) // Bài tiêu điểm lớn nhất trang chủ
+  viewCount    Int       @default(0)
+  readingTime  Int       @default(3)     // Số phút đọc
+  publishedAt  DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  categoryId   String
+  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tags         Tag[]
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  articles  Article[]
+}
