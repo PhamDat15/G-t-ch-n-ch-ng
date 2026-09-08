@@ -18,8 +18,16 @@ export interface ParsedWordArticle {
  * Phân tích file Word (.docx), trích xuất ảnh độ phân giải cao và chuẩn hóa sang HTML chuẩn báo chí
  */
 export async function parseDocxBuffer(buffer: Buffer): Promise<ParsedWordArticle> {
+  const isVercel = !!process.env.VERCEL;
   const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(uploadDir, { recursive: true });
+
+  if (!isVercel) {
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+    } catch {
+      // Bỏ qua nếu không thể tạo thư mục
+    }
+  }
 
   const extractedImages: string[] = [];
 
@@ -27,16 +35,29 @@ export async function parseDocxBuffer(buffer: Buffer): Promise<ParsedWordArticle
   const options = {
     convertImage: mammoth.images.imgElement(async (element: any) => {
       const imageBuffer = await element.read();
-      const hash = crypto.randomBytes(8).toString("hex");
-      const filename = `article-img-${Date.now()}-${hash}.webp`;
-      const targetPath = path.join(uploadDir, filename);
-
-      // Dùng Sharp tối ưu ảnh: WebP chất lượng 95% (sắc nét, không vỡ hạt Retina)
-      await sharp(imageBuffer)
+      
+      // Nén ảnh sang WebP 95% siêu nét
+      const webpBuffer = await sharp(imageBuffer)
         .webp({ quality: 95, lossless: false })
-        .toFile(targetPath);
+        .toBuffer();
 
-      const publicUrl = `/uploads/${filename}`;
+      let publicUrl = "";
+
+      if (isVercel) {
+        // Trên môi trường Serverless Vercel (Read-only disk): Nhúng trực tiếp dạng Base64 data URI
+        // Giúp ảnh hiển thị sắc nét vĩnh viễn mà không phụ thuộc vào hệ thống ghi đĩa
+        const base64Data = webpBuffer.toString("base64");
+        publicUrl = `data:image/webp;base64,${base64Data}`;
+      } else {
+        // Khi chạy Local: Ghi ra file tĩnh trong /public/uploads
+        const hash = crypto.randomBytes(8).toString("hex");
+        const filename = `article-img-${Date.now()}-${hash}.webp`;
+        const targetPath = path.join(uploadDir, filename);
+
+        await fs.writeFile(targetPath, webpBuffer);
+        publicUrl = `/uploads/${filename}`;
+      }
+
       extractedImages.push(publicUrl);
 
       return {
