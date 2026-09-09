@@ -5,6 +5,7 @@ import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { uploadBufferToR2 } from "./r2";
 
 export interface ParsedWordArticle {
   title: string;
@@ -18,44 +19,32 @@ export interface ParsedWordArticle {
  * Phân tích file Word (.docx), trích xuất ảnh độ phân giải cao và chuẩn hóa sang HTML chuẩn báo chí
  */
 export async function parseDocxBuffer(buffer: Buffer): Promise<ParsedWordArticle> {
-  const isVercel = !!process.env.VERCEL;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-  if (!isVercel) {
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-    } catch {
-      // Bỏ qua nếu không thể tạo thư mục
-    }
-  }
-
   const extractedImages: string[] = [];
 
   // Tùy biến chuyển đổi hình ảnh trong file Word: giữ nguyên chất lượng và xuất ra WebP sắc nét
   const options = {
     convertImage: mammoth.images.imgElement(async (element: any) => {
       const imageBuffer = await element.read();
-      
-      // Nén ảnh sang WebP 95% siêu nét
+      // Nén ảnh: Resize giới hạn chiều rộng 1600px (ảnh từ máy cơ sẽ được thu nhỏ lại)
+      // và chuyển sang WebP với chất lượng 80% (cân bằng tối ưu giữa dung lượng và độ nét)
       const webpBuffer = await sharp(imageBuffer)
-        .webp({ quality: 95, lossless: false })
+        .resize({ width: 1600, withoutEnlargement: true })
+        .webp({ quality: 80, effort: 4 })
         .toBuffer();
+
+      const hash = crypto.randomBytes(8).toString("hex");
+      const filename = `article-img-${Date.now()}-${hash}.webp`;
 
       let publicUrl = "";
 
-      if (isVercel) {
-        // Trên môi trường Serverless Vercel (Read-only disk): Nhúng trực tiếp dạng Base64 data URI
-        // Giúp ảnh hiển thị sắc nét vĩnh viễn mà không phụ thuộc vào hệ thống ghi đĩa
+      try {
+        // Tải ảnh lên Cloudflare R2
+        publicUrl = await uploadBufferToR2(webpBuffer, filename, "image/webp");
+      } catch (err) {
+        console.error("Lỗi khi tải ảnh lên R2, fallback dùng base64:", err);
+        // Fallback: nếu lỗi cấu hình, nhúng base64 để không mất ảnh
         const base64Data = webpBuffer.toString("base64");
         publicUrl = `data:image/webp;base64,${base64Data}`;
-      } else {
-        // Khi chạy Local: Ghi ra file tĩnh trong /public/uploads
-        const hash = crypto.randomBytes(8).toString("hex");
-        const filename = `article-img-${Date.now()}-${hash}.webp`;
-        const targetPath = path.join(uploadDir, filename);
-
-        await fs.writeFile(targetPath, webpBuffer);
-        publicUrl = `/uploads/${filename}`;
       }
 
       extractedImages.push(publicUrl);

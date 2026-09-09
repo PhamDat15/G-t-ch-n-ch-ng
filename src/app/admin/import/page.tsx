@@ -79,6 +79,20 @@ export default function ImportWordPage() {
         method: "POST",
         body: formData,
       });
+
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error("File có dung lượng quá lớn (vượt quá giới hạn cho phép của máy chủ). Hãy nén bớt hình ảnh trong file Word hoặc thử lại.");
+        }
+        const text = await res.text();
+        try {
+          const parsedError = JSON.parse(text);
+          throw new Error(parsedError.error || `Lỗi máy chủ (${res.status})`);
+        } catch {
+          throw new Error(`Máy chủ phản hồi lỗi (${res.status}): ${text.slice(0, 100)}...`);
+        }
+      }
+
       const data = await res.json();
       setResult(data);
       if (data.success) {
