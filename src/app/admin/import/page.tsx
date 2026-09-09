@@ -57,6 +57,8 @@ export default function ImportWordPage() {
     }
   };
 
+  const [loadingMessage, setLoadingMessage] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
@@ -67,18 +69,71 @@ export default function ImportWordPage() {
     setIsLoading(true);
     setResult(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("categorySlug", selectedCategory);
-    formData.append("author", author);
-    formData.append("isHero", String(isHero));
-    formData.append("isFeatured", String(isFeatured));
-
     try {
-      const res = await fetch("/api/import-word", {
-        method: "POST",
-        body: formData,
-      });
+      let res: Response;
+
+      // Nếu file lớn hơn 3.5MB: Upload trực tiếp lên Cloudflare R2 qua Presigned URL (vượt qua giới hạn 4.5MB của Vercel)
+      if (file.size > 3.5 * 1024 * 1024) {
+        setLoadingMessage("Đang tải file lớn trực tiếp lên Cloudflare R2...");
+
+        // 1. Tạo Presigned URL
+        const presignRes = await fetch("/api/upload-presigned", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          }),
+        });
+
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => ({}));
+          throw new Error(err.error || "Không thể khởi tạo liên kết tải file lên Cloudflare");
+        }
+
+        const { uploadUrl, key } = await presignRes.json();
+
+        // 2. Upload file trực tiếp lên R2 từ trình duyệt
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Lỗi khi tải file lên Cloudflare R2. Vui lòng kiểm tra lại cấu hình CORS trên Cloudflare.");
+        }
+
+        // 3. Yêu cầu server giải nén và tối ưu ảnh từ R2
+        setLoadingMessage("Đang giải nén văn bản & tối ưu hóa hình ảnh sắc nét...");
+        res = await fetch("/api/import-word", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            r2Key: key,
+            categorySlug: selectedCategory,
+            author,
+            isHero,
+            isFeatured,
+          }),
+        });
+      } else {
+        // File nhỏ hơn 3.5MB: Gửi trực tiếp qua FormData
+        setLoadingMessage("Đang phân tích Word & bóc tách hình ảnh sắc nét...");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("categorySlug", selectedCategory);
+        formData.append("author", author);
+        formData.append("isHero", String(isHero));
+        formData.append("isFeatured", String(isFeatured));
+
+        res = await fetch("/api/import-word", {
+          method: "POST",
+          body: formData,
+        });
+      }
 
       if (!res.ok) {
         if (res.status === 413) {
@@ -102,6 +157,7 @@ export default function ImportWordPage() {
       setResult({ success: false, error: err.message || "Lỗi mạng khi tải file" });
     } finally {
       setIsLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -224,7 +280,9 @@ export default function ImportWordPage() {
                     : "bg-[#0A2540] hover:bg-[#1A56DB] cursor-pointer"
                 }`}
               >
-                {isLoading ? "Đang phân tích Word & bóc tách hình ảnh sắc nét..." : "Bắt đầu Xử Lý & Xuất Bản Lên Web"}
+                {isLoading
+                  ? (loadingMessage || "Đang phân tích Word & bóc tách hình ảnh sắc nét...")
+                  : "Bắt đầu Xử Lý & Xuất Bản Lên Web"}
               </button>
             </div>
           </form>

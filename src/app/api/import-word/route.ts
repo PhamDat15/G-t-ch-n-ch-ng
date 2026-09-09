@@ -2,28 +2,68 @@ import { NextResponse } from "next/server";
 import { parseDocxBuffer } from "@/lib/docx-parser";
 import { prisma } from "@/lib/db";
 import { seedCategories } from "@/lib/categories";
+import { s3Client } from "@/lib/r2";
+import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import slugify from "slugify";
+
+// Cho phép function chạy tối đa 60 giây trên Vercel để xử lý các file nhiều ảnh
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
     // Đảm bảo 7 danh mục đã được seed
     await seedCategories();
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const categorySlug = formData.get("categorySlug") as string | null;
-    const isHero = formData.get("isHero") === "true";
-    const isFeatured = formData.get("isFeatured") === "true";
-    const author = (formData.get("author") as string) || "Ban Biên Tập Gạt Chân Chống";
+    const contentType = req.headers.get("content-type") || "";
+    let buffer: Buffer;
+    let categorySlug: string | null = null;
+    let isHero = false;
+    let isFeatured = false;
+    let author = "Ban Biên Tập Gạt Chân Chống";
+    let tempR2Key: string | null = null;
 
-    if (!file) {
-      return NextResponse.json({ error: "Vui lòng chọn file Word (.docx)" }, { status: 400 });
+    if (contentType.includes("application/json")) {
+      // Phương thức Upload trực tiếp (Presigned URL) cho file lớn
+      const body = await req.json();
+      tempR2Key = body.r2Key;
+      categorySlug = body.categorySlug;
+      isHero = !!body.isHero;
+      isFeatured = !!body.isFeatured;
+      if (body.author) author = body.author;
+
+      if (!tempR2Key) {
+        return NextResponse.json({ error: "Không tìm thấy file trên R2" }, { status: 400 });
+      }
+
+      // Tải buffer từ R2 về serverless function để giải nén
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: tempR2Key,
+      });
+      const s3Item = await s3Client.send(getCommand);
+      const bytes = await s3Item.Body?.transformToByteArray();
+      if (!bytes) {
+        throw new Error("Không thể đọc nội dung file từ Cloudflare R2");
+      }
+      buffer = Buffer.from(bytes);
+    } else {
+      // Phương thức FormData truyền thống cho file nhỏ (< 4MB)
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      categorySlug = formData.get("categorySlug") as string | null;
+      isHero = formData.get("isHero") === "true";
+      isFeatured = formData.get("isFeatured") === "true";
+      author = (formData.get("author") as string) || "Ban Biên Tập Gạt Chân Chống";
+
+      if (!file) {
+        return NextResponse.json({ error: "Vui lòng chọn file Word (.docx)" }, { status: 400 });
+      }
+
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Bóc tách text và ảnh chất lượng cao
+    // Bóc tách text và ảnh chất lượng cao (ảnh tự nén và đẩy vào R2)
     const parsed = await parseDocxBuffer(buffer);
 
     // Tìm danh mục
@@ -77,6 +117,20 @@ export async function POST(req: Request) {
         categoryId: category.id,
       },
     });
+
+    // Dọn dẹp file tạm trên R2 nếu có
+    if (tempR2Key) {
+      try {
+        await s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: tempR2Key,
+          })
+        );
+      } catch (err) {
+        console.warn("Không thể xóa file docx tạm:", err);
+      }
+    }
 
     return NextResponse.json({
       success: true,
