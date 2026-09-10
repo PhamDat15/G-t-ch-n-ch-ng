@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { parseDocxBuffer } from "@/lib/docx-parser";
 import { prisma } from "@/lib/db";
 import { seedCategories } from "@/lib/categories";
@@ -130,6 +131,17 @@ export async function POST(req: Request) {
       } catch (err) {
         console.warn("Không thể xóa file docx tạm:", err);
       }
+    }
+
+    // Làm mới cache ngay lập tức cho Trang chủ, Chuyên mục và Trang Admin
+    try {
+      revalidatePath("/");
+      revalidatePath("/admin");
+      if (categorySlug) {
+        revalidatePath(`/chuyen-muc/${categorySlug}`);
+      }
+    } catch (e) {
+      console.warn("Không thể xóa cache ISR:", e);
     }
 
     return NextResponse.json({

@@ -54,12 +54,23 @@ export default async function HomePage() {
     select: ARTICLE_CARD_SELECT,
   });
 
-  // 4. Lấy danh sách bài nổi bật / đọc nhiều
-  const trendingArticles = await prisma.article.findMany({
+  // 4. Lấy danh sách bài nổi bật (Ưu tiên các bài được đánh dấu 'isFeatured')
+  const featuredArticles = await prisma.article.findMany({
+    where: { isFeatured: true, id: { not: heroArticle?.id } },
     take: 4,
-    orderBy: { viewCount: "desc" },
+    orderBy: { publishedAt: "desc" },
     select: ARTICLE_CARD_SELECT,
   });
+
+  const trendingArticles =
+    featuredArticles.length >= 4
+      ? featuredArticles
+      : await prisma.article.findMany({
+          where: { id: { not: heroArticle?.id } },
+          take: 4,
+          orderBy: { viewCount: "desc" },
+          select: ARTICLE_CARD_SELECT,
+        });
 
   // 5. Lấy các bài viết nhóm theo chuyên mục để hiển thị bên dưới
   const categoriesWithArticles = await prisma.category.findMany({
