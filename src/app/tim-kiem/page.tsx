@@ -18,13 +18,23 @@ export default async function SearchPage({
     articles = await prisma.article.findMany({
       where: {
         OR: [
-          { title: { contains: query } },
-          { sapo: { contains: query } },
-          { content: { contains: query } },
-          { author: { contains: query } },
+          { title: { contains: query, mode: "insensitive" } },
+          { sapo: { contains: query, mode: "insensitive" } },
+          { content: { contains: query, mode: "insensitive" } },
+          { author: { contains: query, mode: "insensitive" } },
         ],
       },
-      include: { category: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        sapo: true,
+        thumbnail: true,
+        author: true,
+        readingTime: true,
+        publishedAt: true,
+        category: true,
+      },
       orderBy: { publishedAt: "desc" },
     });
   }

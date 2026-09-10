@@ -4,7 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -14,6 +14,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     include: {
       articles: {
         orderBy: { publishedAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          sapo: true,
+          thumbnail: true,
+          author: true,
+          readingTime: true,
+          publishedAt: true,
+        },
       },
     },
   });

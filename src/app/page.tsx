@@ -9,20 +9,34 @@ import HotFlightRoutes from "@/components/HotFlightRoutes";
 import VietnamWeatherWidget from "@/components/VietnamWeatherWidget";
 import TravelAdviceWidget from "@/components/TravelAdviceWidget";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // Cache 60s để giảm tối đa Network Transfer
+
+const ARTICLE_CARD_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  sapo: true,
+  thumbnail: true,
+  author: true,
+  source: true,
+  isHero: true,
+  isFeatured: true,
+  viewCount: true,
+  readingTime: true,
+  publishedAt: true,
+  category: true,
+};
 
 export default async function HomePage() {
-  await seedSampleArticles();
-
-  // 1. Lấy bài tiêu điểm lớn (Hero)
+  // 1. Lấy bài tiêu điểm lớn (Hero) - Tuyệt đối không kéo cột content để tiết kiệm băng thông
   const heroArticle =
     (await prisma.article.findFirst({
       where: { isHero: true },
-      include: { category: true },
+      select: ARTICLE_CARD_SELECT,
     })) ||
     (await prisma.article.findFirst({
       orderBy: { publishedAt: "desc" },
-      include: { category: true },
+      select: ARTICLE_CARD_SELECT,
     }));
 
   // 2. Lấy 3 bài tiêu điểm phụ bên dưới Hero
@@ -30,21 +44,21 @@ export default async function HomePage() {
     where: { id: { not: heroArticle?.id } },
     take: 3,
     orderBy: { publishedAt: "desc" },
-    include: { category: true },
+    select: ARTICLE_CARD_SELECT,
   });
 
   // 3. Lấy danh sách tin mới / tin thời sự cho cột bên trái
   const latestArticles = await prisma.article.findMany({
     take: 6,
     orderBy: { publishedAt: "desc" },
-    include: { category: true },
+    select: ARTICLE_CARD_SELECT,
   });
 
   // 4. Lấy danh sách bài nổi bật / đọc nhiều
   const trendingArticles = await prisma.article.findMany({
     take: 4,
     orderBy: { viewCount: "desc" },
-    include: { category: true },
+    select: ARTICLE_CARD_SELECT,
   });
 
   // 5. Lấy các bài viết nhóm theo chuyên mục để hiển thị bên dưới
@@ -53,6 +67,7 @@ export default async function HomePage() {
       articles: {
         take: 4,
         orderBy: { publishedAt: "desc" },
+        select: ARTICLE_CARD_SELECT,
       },
     },
     orderBy: { order: "asc" },
