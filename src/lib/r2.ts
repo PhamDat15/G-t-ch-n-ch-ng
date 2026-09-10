@@ -13,29 +13,46 @@ export const s3Client = new S3Client({
     accessKeyId: accessKeyId || "",
     secretAccessKey: secretAccessKey || "",
   },
+  maxAttempts: 4, // Tự động thử lại ở tầng SDK
 });
 
 /**
- * Uploads a buffer to Cloudflare R2 and returns the public URL.
+ * Uploads a buffer to Cloudflare R2 với cơ chế tự động thử lại (Auto-retry)
  */
 export async function uploadBufferToR2(
   buffer: Buffer,
   filename: string,
-  contentType: string
+  contentType: string,
+  maxRetries = 3
 ): Promise<string> {
   if (!accountId || !accessKeyId || !secretAccessKey || !bucketName || !publicUrl) {
-    throw new Error("Cloudflare R2 is not fully configured in environment variables.");
+    throw new Error("Cloudflare R2 chưa được cấu hình đầy đủ trong biến môi trường.");
   }
 
-  const command = new PutObjectCommand({
-    Bucket: bucketName,
-    Key: filename,
-    Body: buffer,
-    ContentType: contentType,
-  });
+  let lastError: any;
 
-  await s3Client.send(command);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: filename,
+        Body: buffer,
+        ContentType: contentType,
+      });
 
-  const baseUrl = publicUrl.endsWith("/") ? publicUrl.slice(0, -1) : publicUrl;
-  return `${baseUrl}/${filename}`;
+      await s3Client.send(command);
+
+      const baseUrl = publicUrl.endsWith("/") ? publicUrl.slice(0, -1) : publicUrl;
+      return `${baseUrl}/${filename}`;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[R2 Upload] Lần thử ${attempt}/${maxRetries} thất bại: ${err.message}. Đang thử lại...`);
+      if (attempt < maxRetries) {
+        // Nghỉ tăng dần (500ms, 1000ms...) trước khi gửi lại
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+
+  throw new Error(`Lỗi tải ảnh lên Cloudflare R2 sau ${maxRetries} lần thử: ${lastError?.message}`);
 }
