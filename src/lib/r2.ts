@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -56,3 +56,23 @@ export async function uploadBufferToR2(
 
   throw new Error(`Lỗi tải ảnh lên Cloudflare R2 sau ${maxRetries} lần thử: ${lastError?.message}`);
 }
+
+/**
+ * Xóa danh sách các file ảnh khỏi Cloudflare R2 khi gỡ bài viết
+ */
+export async function deleteFilesFromR2(keys: string[]) {
+  if (!keys || keys.length === 0 || !bucketName) return;
+  try {
+    const command = new DeleteObjectsCommand({
+      Bucket: bucketName,
+      Delete: {
+        Objects: keys.map((Key) => ({ Key })),
+        Quiet: true,
+      },
+    });
+    await s3Client.send(command);
+  } catch (err) {
+    console.warn("Không thể xóa file trên Cloudflare R2:", err);
+  }
+}
+
