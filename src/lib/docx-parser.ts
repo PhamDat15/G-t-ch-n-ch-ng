@@ -37,15 +37,8 @@ export async function parseDocxBuffer(buffer: Buffer): Promise<ParsedWordArticle
 
       let publicUrl = "";
 
-      try {
-        // Tải ảnh lên Cloudflare R2
-        publicUrl = await uploadBufferToR2(webpBuffer, filename, "image/webp");
-      } catch (err) {
-        console.error("Lỗi khi tải ảnh lên R2, fallback dùng base64:", err);
-        // Fallback: nếu lỗi cấu hình, nhúng base64 để không mất ảnh
-        const base64Data = webpBuffer.toString("base64");
-        publicUrl = `data:image/webp;base64,${base64Data}`;
-      }
+      // Tải ảnh trực tiếp lên Cloudflare R2 (Bắt buộc 100% dùng R2, tuyệt đối KHÔNG lưu base64 vào DB)
+      publicUrl = await uploadBufferToR2(webpBuffer, filename, "image/webp");
 
       extractedImages.push(publicUrl);
 
