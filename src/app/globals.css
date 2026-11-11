@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-playfair), "Playfair Display", Georgia, serif;
-  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
-  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
-  --font-playfair: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-merriweather), "Merriweather", Georgia, serif;
+  --font-serif: var(--font-merriweather), "Merriweather", Georgia, serif;
+  --font-display: var(--font-merriweather), "Merriweather", Georgia, serif;
+  --font-merriweather: var(--font-merriweather), "Merriweather", Georgia, serif;
 }
 
 @layer base {
@@ -18,13 +18,13 @@
   }
 
   * {
-    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
+    font-family: var(--font-merriweather), "Merriweather", Georgia, serif !important;
   }
 
   body {
     background-color: #fcfbf8;
     color: #1e293b;
-    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
+    font-family: var(--font-merriweather), "Merriweather", Georgia, serif !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
@@ -33,9 +33,9 @@
 
   /* Định dạng typography chuẩn báo chí cho phần nội dung */
   .article-body h2 {
-    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
-    font-size: 1.85rem;
-    line-height: 2.3rem;
+    font-family: var(--font-merriweather), "Merriweather", Georgia, serif !important;
+    font-size: 1.75rem;
+    line-height: 2.2rem;
     font-weight: 700;
     color: #0f172a;
     margin-top: 2.25rem;
@@ -45,9 +45,9 @@
   }
 
   .article-body h3 {
-    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
-    font-size: 1.5rem;
-    line-height: 2rem;
+    font-family: var(--font-merriweather), "Merriweather", Georgia, serif !important;
+    font-size: 1.4rem;
+    line-height: 1.9rem;
     font-weight: 700;
     color: #0f172a;
     margin-top: 1.75rem;

@@ -28,15 +28,116 @@ const CATEGORIES = [
 ];
 
 export default function ArticleImportForm() {
-  const [file, setFile] = useState<File | null>(null);
+  // State chung
   const [selectedCategory, setSelectedCategory] = useState("kham-pha");
   const [author, setAuthor] = useState("Ban Biên tập Việt Nam Travel");
   const [isHero, setIsHero] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
 
-  // Hỗ trợ kéo thả file
+  // State cho bài viết Word thông thường
+  const [file, setFile] = useState<File | null>(null);
+
+  // State riêng cho Multimedia (YouTube)
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeVideoId, setYoutubeVideoId] = useState("");
+  const [videoTitle, setVideoTitle] = useState("");
+  const [videoSapo, setVideoSapo] = useState("");
+  const [videoThumbnail, setVideoThumbnail] = useState("");
+  const [isFetchingYt, setIsFetchingYt] = useState(false);
+  const [ytError, setYtError] = useState("");
+
+  const isMultimedia = selectedCategory === "multimedia";
+
+  // Lấy thông tin video từ YouTube API
+  const handleFetchYoutubeInfo = async () => {
+    if (!youtubeUrl.trim()) {
+      setYtError("Vui lòng dán đường link YouTube.");
+      return;
+    }
+
+    setIsFetchingYt(true);
+    setYtError("");
+
+    try {
+      const res = await fetch("/api/cms/youtube-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: youtubeUrl.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Không thể lấy thông tin video.");
+      }
+
+      setYoutubeVideoId(data.videoId);
+      setVideoTitle(data.title);
+      setVideoThumbnail(data.thumbnail);
+      if (data.author) setAuthor(data.author);
+      if (!videoSapo) {
+        setVideoSapo(`Cùng Việt Nam Travel khám phá video: ${data.title}.`);
+      }
+    } catch (err: unknown) {
+      setYtError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi lấy thông tin YouTube.");
+    } finally {
+      setIsFetchingYt(false);
+    }
+  };
+
+  // Submit bài viết Multimedia
+  const handleMultimediaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!youtubeVideoId) {
+      alert("Vui lòng nhập link YouTube và bấm 'Lấy thông tin' trước khi đăng.");
+      return;
+    }
+    if (!videoTitle.trim()) {
+      alert("Vui lòng nhập tiêu đề cho video.");
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingMessage("Đang đăng video Multimedia lên hệ thống...");
+    setResult(null);
+
+    try {
+      const res = await fetch("/api/cms/multimedia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId: youtubeVideoId,
+          title: videoTitle.trim(),
+          sapo: videoSapo.trim(),
+          author: author.trim(),
+          isHero,
+          isFeatured,
+          customThumbnail: videoThumbnail,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Đăng bài video thất bại.");
+      }
+
+      setResult(data);
+      setYoutubeUrl("");
+      setYoutubeVideoId("");
+      setVideoTitle("");
+      setVideoSapo("");
+      setVideoThumbnail("");
+    } catch (err: unknown) {
+      setResult({ success: false, error: err instanceof Error ? err.message : "Lỗi khi lưu video." });
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage("");
+    }
+  };
+
+  // Hỗ trợ kéo thả file Word
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -55,9 +156,8 @@ export default function ArticleImportForm() {
     }
   };
 
-  const [loadingMessage, setLoadingMessage] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Submit bài viết Word thông thường
+  const handleWordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       alert("Vui lòng chọn file Word (.docx)");
@@ -70,42 +170,26 @@ export default function ArticleImportForm() {
     try {
       let res: Response;
 
-      // Nếu file lớn hơn 3.5MB: Upload trực tiếp lên Cloudflare R2 qua Presigned URL (vượt qua giới hạn 4.5MB của Vercel)
       if (file.size > 3.5 * 1024 * 1024) {
         setLoadingMessage("Đang tải file lớn trực tiếp lên Cloudflare R2...");
-
-        // 1. Tạo Presigned URL
         const presignRes = await fetch("/api/upload-presigned", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          }),
+          body: JSON.stringify({ filename: file.name, contentType: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }),
         });
 
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => ({}));
-          throw new Error(err.error || "Không thể khởi tạo liên kết tải file lên Cloudflare");
-        }
-
+        if (!presignRes.ok) throw new Error("Không thể khởi tạo phiên tải lên R2");
         const { uploadUrl, key } = await presignRes.json();
 
-        // 2. Upload file trực tiếp lên R2 từ trình duyệt
-        const uploadRes = await fetch(uploadUrl, {
+        const uploadToR2Res = await fetch(uploadUrl, {
           method: "PUT",
-          headers: {
-            "Content-Type": file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          },
+          headers: { "Content-Type": file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
           body: file,
         });
 
-        if (!uploadRes.ok) {
-          throw new Error("Lỗi khi tải file lên Cloudflare R2. Vui lòng kiểm tra lại cấu hình CORS trên Cloudflare.");
-        }
+        if (!uploadToR2Res.ok) throw new Error("Tải file lên Cloudflare R2 thất bại");
 
-        // 3. Yêu cầu server giải nén và tối ưu ảnh từ R2
-        setLoadingMessage("Đang giải nén văn bản & tối ưu hóa hình ảnh sắc nét...");
+        setLoadingMessage("Đang bóc tách hình ảnh và chuyển đổi định dạng bài viết...");
         res = await fetch("/api/import-word", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -118,7 +202,6 @@ export default function ArticleImportForm() {
           }),
         });
       } else {
-        // File nhỏ hơn 3.5MB: Gửi trực tiếp qua FormData
         setLoadingMessage("Đang phân tích Word & bóc tách hình ảnh sắc nét...");
         const formData = new FormData();
         formData.append("file", file);
@@ -134,9 +217,6 @@ export default function ArticleImportForm() {
       }
 
       if (!res.ok) {
-        if (res.status === 413) {
-          throw new Error("File có dung lượng quá lớn (vượt quá giới hạn cho phép của máy chủ). Hãy nén bớt hình ảnh trong file Word hoặc thử lại.");
-        }
         const text = await res.text();
         try {
           const parsedError = JSON.parse(text);
@@ -160,28 +240,183 @@ export default function ArticleImportForm() {
   };
 
   return (
-    <section className="w-full max-w-4xl">
-        {/* Banner tiêu đề trang import */}
-        <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-sm mb-8 shadow-xs">
-          <div className="border-b border-slate-200 pb-4 mb-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#1A56DB]">
-              Hệ Thống Tự Động Hóa Tòa Soạn
-            </span>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-[#0A2540] font-serif mt-1">
-              Nhập Bài Viết Tự Động Từ File Word (.docx)
-            </h1>
-            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-              Tải lên file văn bản Word của bạn. Hệ thống sẽ tự động bóc tách tiêu đề, sapo, các đoạn văn và <strong>trích xuất toàn bộ hình ảnh ở độ nét tối đa (WebP 95%)</strong> rồi đóng gói vào đúng khuôn thiết kế của Tạp chí Việt Nam Travel.
-            </p>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Tiêu đề & Giới thiệu */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0A2540]">
+          Thêm Bài Viết Mới
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Hỗ trợ nhập bài tự động từ file **Microsoft Word (.docx)** hoặc dán link **Video YouTube** cho chuyên mục Multimedia.
+        </p>
+      </div>
+
+      {/* Form chính */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
+        {/* Chọn chuyên mục đầu tiên để đổi chế độ nhập liệu */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Chuyên mục đăng bài *
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setResult(null);
+              }}
+              className="w-full bg-white border border-slate-300 rounded px-3 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#d49a37] focus:ring-1 focus:ring-[#d49a37]"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.slug} value={cat.slug}>
+                  {cat.name} {cat.slug === "multimedia" ? "(Video YouTube)" : ""}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Vùng kéo thả file */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Tác giả / Kênh phát hành
+            </label>
+            <input
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Ví dụ: Ban Biên Tập, Tên Kênh..."
+              className="w-full bg-white border border-slate-300 rounded px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-[#d49a37]"
+            />
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------------- */}
+        {/* KHỐI 1: NẾU LÀ CHUYÊN MỤC MULTIMEDIA (DÁN LINK YOUTUBE)       */}
+        {/* ------------------------------------------------------------- */}
+        {isMultimedia ? (
+          <form onSubmit={handleMultimediaSubmit} className="space-y-6 pt-6">
+            <div className="rounded-xl border border-amber-200 bg-[#fffdfa] p-4 text-xs text-amber-900 leading-relaxed">
+              💡 <strong>Chế độ Video Multimedia:</strong> Bạn chỉ cần dán đường link video từ YouTube (kể cả YouTube Shorts), hệ thống sẽ tự động trích xuất tiêu đề, ảnh thumbnail và tích hợp trình phát video trực tiếp.
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                Đường link Video YouTube *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
+                  className="flex-1 bg-white border border-slate-300 rounded px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-[#d49a37]"
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchYoutubeInfo}
+                  disabled={isFetchingYt || !youtubeUrl.trim()}
+                  className="shrink-0 px-4 py-2.5 bg-[#d49a37] text-white font-bold text-xs uppercase tracking-wider rounded hover:bg-[#b88226] transition disabled:opacity-50"
+                >
+                  {isFetchingYt ? "Đang tải..." : "Lấy thông tin"}
+                </button>
+              </div>
+              {ytError && <p className="mt-2 text-xs text-red-600">{ytError}</p>}
+            </div>
+
+            {/* Khung xem trước và tùy chỉnh khi đã lấy được video */}
+            {youtubeVideoId && (
+              <div className="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5 animate-fade-in">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Xem trước Video YouTube
+                  </h3>
+                  <span className="text-[11px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    ID: {youtubeVideoId}
+                  </span>
+                </div>
+
+                {/* Trình phát nhúng thử */}
+                <div className="aspect-video w-full max-w-xl mx-auto overflow-hidden rounded-xl bg-black shadow">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                    title="YouTube video player"
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Tiêu đề video (có thể chỉnh sửa lại) *
+                  </label>
+                  <input
+                    type="text"
+                    value={videoTitle}
+                    onChange={(e) => setVideoTitle(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#d49a37]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Đoạn mô tả ngắn (Sapo)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={videoSapo}
+                    onChange={(e) => setVideoSapo(e.target.value)}
+                    placeholder="Mô tả tóm tắt nội dung video..."
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-[#d49a37]"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Checkbox vị trí hiển thị */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-8 pt-2">
+              <label className="flex items-center space-x-2 text-sm text-slate-800 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isHero}
+                  onChange={(e) => setIsHero(e.target.checked)}
+                  className="rounded border-slate-300 text-[#d49a37] focus:ring-[#d49a37]"
+                />
+                <span className="font-medium">Đặt làm bài tiêu điểm lớn nhất (Hero)</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm text-slate-800 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  className="rounded border-slate-300 text-[#d49a37] focus:ring-[#d49a37]"
+                />
+                <span className="font-medium">Đánh dấu nổi bật (Đọc nhiều)</span>
+              </label>
+            </div>
+
+            {/* Nút bấm Submit */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isLoading || !youtubeVideoId}
+                className="w-full sm:w-auto px-8 py-3 bg-[#d49a37] text-white font-bold text-sm uppercase tracking-wider rounded-lg shadow hover:bg-[#b88226] transition disabled:opacity-50 cursor-pointer"
+              >
+                {isLoading ? (loadingMessage || "Đang xử lý...") : "Đăng Video Multimedia"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* ------------------------------------------------------------- */
+          /* KHỐI 2: CÁC CHUYÊN MỤC BÀI VIẾT THÔNG THƯỜNG (FILE WORD)     */
+          /* ------------------------------------------------------------- */
+          <form onSubmit={handleWordSubmit} className="space-y-6 pt-6">
             <div
-              onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded p-8 text-center transition cursor-pointer ${
-                file ? "border-[#1A56DB] bg-sky-50/50" : "border-slate-300 hover:border-[#1A56DB] bg-white"
+              onDragOver={(e) => e.preventDefault()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                file
+                  ? "border-emerald-500 bg-emerald-50/30"
+                  : "border-slate-300 hover:border-[#1A56DB] bg-slate-50/50"
               }`}
             >
               <input
@@ -208,39 +443,6 @@ export default function ArticleImportForm() {
               </label>
             </div>
 
-            {/* Các tùy chọn chuyên mục và bài viết */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Chuyên mục đăng bài (1 trong 7 mục) *
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-[#1A56DB]"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat.slug} value={cat.slug}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Tác giả / Nguồn tin
-                </label>
-                <input
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  placeholder="Ví dụ: Trần Nam, Ban Biên Tập..."
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-[#1A56DB]"
-                />
-              </div>
-            </div>
-
             {/* Checkbox vị trí hiển thị */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-8 pt-2">
               <label className="flex items-center space-x-2 text-sm text-slate-800 cursor-pointer">
@@ -248,9 +450,9 @@ export default function ArticleImportForm() {
                   type="checkbox"
                   checked={isHero}
                   onChange={(e) => setIsHero(e.target.checked)}
-                  className="w-4 h-4 text-[#1A56DB] rounded border-slate-300 focus:ring-0"
+                  className="rounded border-slate-300 text-[#1A56DB] focus:ring-[#1A56DB]"
                 />
-                <span className="font-semibold">Đặt làm Bài Tiêu Điểm Lớn (Hero Trang Chủ)</span>
+                <span className="font-medium">Đặt làm bài tiêu điểm lớn nhất (Hero)</span>
               </label>
 
               <label className="flex items-center space-x-2 text-sm text-slate-800 cursor-pointer">
@@ -258,87 +460,69 @@ export default function ArticleImportForm() {
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="w-4 h-4 text-[#1A56DB] rounded border-slate-300 focus:ring-0"
+                  className="rounded border-slate-300 text-[#1A56DB] focus:ring-[#1A56DB]"
                 />
-                <span>Đánh dấu là Tin nổi bật</span>
+                <span className="font-medium">Đánh dấu nổi bật (Đọc nhiều)</span>
               </label>
             </div>
 
             {/* Nút bấm Submit */}
-            <div className="pt-4 border-t border-slate-200">
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={isLoading || !file}
-                className={`w-full py-3.5 px-6 font-bold uppercase tracking-wider text-xs transition rounded-sm text-white ${
-                  isLoading || !file
-                    ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-[#0A2540] hover:bg-[#1A56DB] cursor-pointer"
-                }`}
+                className="w-full sm:w-auto px-8 py-3 bg-[#1A56DB] text-white font-bold text-sm uppercase tracking-wider rounded shadow hover:bg-[#1546B0] transition disabled:opacity-50 cursor-pointer"
               >
-                {isLoading
-                  ? (loadingMessage || "Đang phân tích Word & bóc tách hình ảnh sắc nét...")
-                  : "Bắt đầu Xử Lý & Xuất Bản Lên Web"}
+                {isLoading ? (loadingMessage || "Đang bóc tách bài viết...") : "Xuất bản bài viết"}
               </button>
             </div>
           </form>
+        )}
+      </div>
 
-          {/* Kết quả sau khi Import */}
-          {result && (
-            <div className="mt-8 pt-6 border-t border-slate-200">
-              {result.success && result.article ? (
-                <div className="bg-emerald-50 border border-emerald-300 p-5 rounded">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-emerald-900 uppercase">
-                      ✓ Đã nhập thành công bài viết lên website!
-                    </h3>
-                    <span className="text-xs text-emerald-700 font-mono">
-                      {result.imageCount} ảnh chất lượng cao đã trích xuất
-                    </span>
-                  </div>
-                  <p className="text-base font-bold text-slate-900 mt-2 font-serif">
-                    {result.article.title}
-                  </p>
-                  <p className="text-xs text-slate-600 mt-1 line-clamp-2">{result.article.sapo}</p>
-
-                  <div className="mt-4 flex items-center space-x-4">
+      {/* Hiển thị kết quả thành công / thất bại */}
+      {result && (
+        <div
+          className={`border p-6 rounded-xl animate-fade-in ${
+            result.success
+              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+              : "bg-red-50 border-red-200 text-red-900"
+          }`}
+        >
+          {result.success ? (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-lg">Đăng bài thành công!</span>
+              </div>
+              {result.article && (
+                <div className="pt-2">
+                  <p className="font-semibold text-base">{result.article.title}</p>
+                  <div className="mt-3 flex items-center space-x-4">
                     <Link
                       href={`/bai-viet/${result.article.slug}`}
-                      className="bg-[#0A2540] hover:bg-[#1A56DB] text-white text-xs font-bold px-4 py-2 uppercase tracking-wider transition inline-block"
+                      target="_blank"
+                      className="text-xs font-bold uppercase tracking-wider bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 transition"
                     >
-                      Xem Bài Viết Vừa Đăng »
+                      Xem bài viết thực tế ↗
                     </Link>
                     <Link
-                      href="/"
-                      className="text-xs font-semibold text-slate-700 hover:underline"
+                      href="/cms/bai-viet"
+                      className="text-xs font-bold uppercase tracking-wider text-emerald-800 underline hover:text-emerald-950"
                     >
-                      Về Trang Chủ Kiểm Tra
+                      Về danh sách bài viết
                     </Link>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-rose-50 border border-rose-300 p-4 rounded text-xs text-rose-800">
-                  <p className="font-bold">Đã xảy ra lỗi khi xử lý:</p>
-                  <p className="mt-1">{result.error}</p>
                 </div>
               )}
             </div>
+          ) : (
+            <div className="space-y-2">
+              <span className="font-bold text-lg text-red-800">Đã xảy ra lỗi:</span>
+              <p className="text-sm text-red-700">{result.error}</p>
+            </div>
           )}
         </div>
-
-        {/* Hướng dẫn dành cho khách hàng */}
-        <div className="bg-white border border-slate-200 p-6 rounded-sm text-xs text-slate-600 space-y-3">
-          <h4 className="font-bold text-slate-800 uppercase tracking-wider text-sm border-b border-slate-100 pb-2">
-            Quy chuẩn soạn thảo bài viết trong Word (.docx) để lên khuôn đẹp nhất:
-          </h4>
-          <ul className="space-y-2 list-disc pl-5 leading-relaxed">
-            <li><strong>Dòng đầu tiên:</strong> Tiêu đề chính của bài báo (hoặc dùng Style Heading 1).</li>
-            <li><strong>Đoạn văn thứ hai:</strong> Đoạn Sapo tóm tắt mở đầu (ngắn gọn 2-3 câu).</li>
-            <li><strong>Hình ảnh:</strong> Chèn ảnh trực tiếp vào file Word (Insert &gt; Pictures). Giữ ảnh gốc nét nhất có thể, hệ thống sẽ tự động chuyển đổi sang định dạng WebP 95% siêu nét.</li>
-            <li><strong>Chú thích ảnh (Caption):</strong> Gõ dòng chú thích ngay bên dưới ảnh, hệ thống sẽ tự động ghép thành khung hình có chú thích chuẩn báo chí.</li>
-            <li><strong>Tiêu đề mục con:</strong> Dùng Style Heading 2 hoặc Heading 3 để tự động tạo thanh gạch phân đoạn màu xanh sang trọng.</li>
-          </ul>
-        </div>
-    </section>
+      )}
+    </div>
   );
 }
-

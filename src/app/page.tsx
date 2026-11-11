@@ -28,24 +28,41 @@ function ArticleImage({
   article,
   className = "",
 }: {
-  article: { thumbnail: string | null; title: string };
+  article: { thumbnail: string | null; title: string; category?: { slug: string } };
   className?: string;
 }) {
-  return article.thumbnail ? (
-    <Image
-      fill
-      sizes="(max-width: 768px) 100vw, 50vw"
-      src={article.thumbnail}
-      alt={article.title}
-      className={`object-cover transition duration-500 group-hover:scale-[1.03] ${className}`}
-    />
-  ) : (
-    <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900" />
+  const isVideo = article.category?.slug === "multimedia";
+
+  return (
+    <div className="relative h-full w-full">
+      {article.thumbnail ? (
+        <Image
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          src={article.thumbnail}
+          alt={article.title}
+          className={`object-cover transition duration-500 group-hover:scale-[1.03] ${className}`}
+        />
+      ) : (
+        <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900" />
+      )}
+      {/* Icon Play tròn nổi bật nếu là bài video Multimedia */}
+      {isVideo && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#d49a37]/90 text-white shadow-lg backdrop-blur-sm group-hover:scale-110 group-hover:bg-[#d49a37] transition duration-300">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default async function HomePage() {
   const articles = await prisma.article.findMany({
+    where: { status: "PUBLISHED" },
     take: 30,
     orderBy: { publishedAt: "desc" },
     select: CARD_SELECT,

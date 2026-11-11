@@ -1,0 +1,87 @@
+========================================================================================
+           DANH SÁCH TÀI KHOẢN HỆ THỐNG CMS TÒA SOẠN VIỆT NAM TRAVEL
+   Trang đăng nhập: https://vietnam-travel-a.vercel.app/cms (hoặc https://cms-vietnam-travel-a.vercel.app)
+========================================================================================
+
+[1] TÀI KHOẢN TRƯỞNG MỤC / BAN BIÊN TẬP (TOÀN QUYỀN DUYỆT BÀI & ĐẢO HEADLINE)
+----------------------------------------------------------------------------------------
+- Họ và tên        : Trưởng Mục (Ban Biên Tập)
+- Vai trò          : ADMIN / TRƯỞNG MỤC
+- Tên đăng nhập    : admin
+- Mật khẩu         : admin
+- Quyền hạn        : Duyệt bài lên trang (On-air), Đảo Headline làm Hero, Gỡ bài, Quản lý
+
+
+[2] DANH SÁCH TÀI KHOẢN PHÓNG VIÊN / THÀNH VIÊN
+----------------------------------------------------------------------------------------
+1. Phạm Đạt (Ban Biên Tập)
+   - Tên đăng nhập : phamdat
+   - Mật khẩu      : dat738@
+   - Vai trò       : Ban Biên Tập
+
+2. Huy
+   - Tên đăng nhập : huy
+   - Mật khẩu      : huy829@
+   - Vai trò       : Phóng viên
+
+3. Nguyễn DuyAnh
+   - Tên đăng nhập : duyanh
+   - Mật khẩu      : duy641@
+   - Vai trò       : Phóng viên
+
+4. Phương Linhh
+   - Tên đăng nhập : phuonglinh
+   - Mật khẩu      : linh291@
+   - Vai trò       : Phóng viên
+
+5. Hà Linh
+   - Tên đăng nhập : halinh
+   - Mật khẩu      : linh402@
+   - Vai trò       : Phóng viên
+
+6. Đỗ Quỳnh Hương
+   - Tên đăng nhập : quynhhuong
+   - Mật khẩu      : huong517@
+   - Vai trò       : Phóng viên
+
+7. Thuỳ Trang
+   - Tên đăng nhập : thuytrang
+   - Mật khẩu      : trang831@
+   - Vai trò       : Phóng viên
+
+8. Duong Hai Yen
+   - Tên đăng nhập : haiyen
+   - Mật khẩu      : yen940@
+   - Vai trò       : Phóng viên
+
+9. Phuong Thao
+   - Tên đăng nhập : phuongthao
+   - Mật khẩu      : thao115@
+   - Vai trò       : Phóng viên
+
+10. Trần Việt Hoàng
+   - Tên đăng nhập : viethoang
+   - Mật khẩu      : hoang728@
+   - Vai trò       : Phóng viên
+
+11. Linh Hoang
+   - Tên đăng nhập : linhhoang
+   - Mật khẩu      : linh338@
+   - Vai trò       : Phóng viên
+
+12. Le Hoang Linh
+   - Tên đăng nhập : hoanglinh
+   - Mật khẩu      : linh559@
+   - Vai trò       : Phóng viên
+
+13. Nguyễn T. Hạnh
+   - Tên đăng nhập : thihanh
+   - Mật khẩu      : hanh672@
+   - Vai trò       : Phóng viên
+
+========================================================================================
+LƯU Ý DÀNH CHO THÀNH VIÊN:
+- Phóng viên đăng bài mới (Word hoặc YouTube) -> Bài viết sẽ ở trạng thái "Chờ duyệt".
+- Trưởng mục (admin/admin) sẽ vào duyệt bài để bài viết xuất hiện trên trang độc giả.
+========================================================================================
+

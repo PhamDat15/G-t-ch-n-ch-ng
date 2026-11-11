@@ -7,6 +7,30 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  ADMIN
+  EDITOR
+  REPORTER
+}
+
+enum ArticleStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  username  String    @unique
+  password  String
+  fullName  String
+  role      Role      @default(REPORTER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+}
+
 model Category {
   id          String    @id @default(cuid())
   name        String    @unique
@@ -19,24 +43,28 @@ model Category {
 }
 
 model Article {
-  id           String    @id @default(cuid())
+  id           String        @id @default(cuid())
   title        String
-  slug         String    @unique
+  slug         String        @unique
   sapo         String
-  content      String    // HTML formatted content with images and captions
-  thumbnail    String?   // URL to high-res thumbnail
-  author       String    @default("Ban Biên Tập")
-  source       String?   // Nguồn tin / Gạt chân chống
-  isFeatured   Boolean   @default(false)
-  isHero       Boolean   @default(false) // Bài tiêu điểm lớn nhất trang chủ
-  viewCount    Int       @default(0)
-  readingTime  Int       @default(3)     // Số phút đọc
-  publishedAt  DateTime  @default(now())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  content      String        // HTML formatted content with images and captions
+  thumbnail    String?       // URL to high-res thumbnail
+  author       String        @default("Ban Biên Tập")
+  source       String?       // Nguồn tin / Gạt chân chống
+  isFeatured   Boolean       @default(false)
+  isHero       Boolean       @default(false) // Bài tiêu điểm lớn nhất trang chủ
+  status       ArticleStatus @default(PUBLISHED)
+  viewCount    Int           @default(0)
+  readingTime  Int           @default(3)     // Số phút đọc
+  publishedAt  DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  authorId     String?
+  authorUser   User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   categoryId   String
-  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   tags         Tag[]
   comments     Comment[]
 }
