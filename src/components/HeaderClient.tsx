@@ -114,14 +114,6 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </button>
             </form>
-
-            {/* Nút Quản Trị CMS */}
-            <Link 
-              href="/cms" 
-              className="shrink-0 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-white/20 hover:text-white"
-            >
-              CMS
-            </Link>
           </div>
         </div>
 
