@@ -4,8 +4,12 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
 
-  // Kiểm tra xem request có đến từ subdomain CMS (ví dụ: cms.vietnamtravel.vn hoặc cms.localhost:3000) hay không
-  const isCmsSubdomain = hostname.startsWith("cms.") || hostname.startsWith("admin.");
+  // Kiểm tra xem request có đến từ domain CMS (ví dụ: cms-..., cms...., admin-..., admin....) hay không
+  const isCmsSubdomain =
+    hostname.startsWith("cms.") ||
+    hostname.startsWith("cms-") ||
+    hostname.startsWith("admin.") ||
+    hostname.startsWith("admin-");
 
   if (isCmsSubdomain) {
     // 1. Nếu đang ở subdomain CMS mà truy cập trang chủ (/), tự động rewrite ngầm vào /cms
