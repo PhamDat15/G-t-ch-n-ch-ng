@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { deleteFilesFromR2 } from "@/lib/r2";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
     const { id } = await params;
 
     const existing = await prisma.article.findUnique({
@@ -59,6 +61,7 @@ export async function DELETE(
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
   const data = {

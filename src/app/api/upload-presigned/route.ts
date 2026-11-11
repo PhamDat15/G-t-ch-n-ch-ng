@@ -3,9 +3,11 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "@/lib/r2";
 import crypto from "crypto";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 export async function POST(req: Request) {
   try {
+    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
     const { filename, contentType } = await req.json();
     const hash = crypto.randomBytes(8).toString("hex");
     const safeName = (filename || "document.docx").replace(/[^a-zA-Z0-9.-]/g, "_");

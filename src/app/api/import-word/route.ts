@@ -6,12 +6,14 @@ import { seedCategories } from "@/lib/categories";
 import { s3Client } from "@/lib/r2";
 import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import slugify from "slugify";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // Cho phép function chạy tối đa 60 giây trên Vercel để xử lý các file nhiều ảnh
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
+    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
     // Đảm bảo 7 danh mục đã được seed
     await seedCategories();
 

@@ -31,13 +31,16 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
           <span className="block font-serif text-3xl font-black tracking-tight text-[#123b5d] transition group-hover:text-[#2576ae] md:text-5xl">{siteName}</span>
           <span className="mt-1.5 block text-sm font-semibold tracking-[0.16em] text-[#b46b2a]">{slogan}</span>
         </Link>
-        <form
-          onSubmit={(event) => { event.preventDefault(); if (query.trim()) router.push(`/tim-kiem?q=${encodeURIComponent(query.trim())}`); }}
-          className="flex w-full max-w-md items-center rounded-full border border-slate-300 bg-white px-4 py-2.5 shadow-sm focus-within:border-[#2576ae] md:w-auto"
-        >
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm kiếm điểm đến, di sản..." aria-label="Tìm kiếm bài viết" className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none md:w-64" />
-          <button className="ml-3 text-sm font-bold text-[#2576ae]" type="submit">Tìm kiếm</button>
-        </form>
+        <div className="flex w-full max-w-xl items-center gap-2 md:w-auto">
+          <form
+            onSubmit={(event) => { event.preventDefault(); if (query.trim()) router.push(`/tim-kiem?q=${encodeURIComponent(query.trim())}`); }}
+            className="flex min-w-0 flex-1 items-center rounded-full border border-slate-300 bg-white px-4 py-2.5 shadow-sm focus-within:border-[#2576ae] md:w-auto"
+          >
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm kiếm điểm đến, di sản..." aria-label="Tìm kiếm bài viết" className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none md:w-64" />
+            <button className="ml-3 text-sm font-bold text-[#2576ae]" type="submit">Tìm kiếm</button>
+          </form>
+          <Link href="/cms" className="shrink-0 rounded-full border border-[#175b8f] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#175b8f] transition hover:bg-[#175b8f] hover:text-white">Quản Trị</Link>
+        </div>
       </div>
       <nav className={`sticky top-0 z-50 border-y border-slate-200 bg-white/95 backdrop-blur transition-shadow ${compact ? "shadow-md" : ""}`}>
         <div className="mx-auto flex max-w-7xl items-center overflow-x-auto px-4">

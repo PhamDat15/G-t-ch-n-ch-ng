@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 export async function PUT(request: Request) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
   const body = await request.json();
   const clean = (name: string, fallback = "") => String(body[name] ?? fallback).trim();
   const data = { siteName: clean("siteName"), slogan: clean("slogan"), description: clean("description"), editor: clean("editor"), address: clean("address"), phone: clean("phone"), email: clean("email"), facebookUrl: clean("facebookUrl") || null, youtubeUrl: clean("youtubeUrl") || null, tiktokUrl: clean("tiktokUrl") || null, instagramUrl: clean("instagramUrl") || null, flightSearchUrl: clean("flightSearchUrl", "https://www.google.com/travel/flights") };

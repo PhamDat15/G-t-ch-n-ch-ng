@@ -1,2 +1,5 @@
 import { redirect } from "next/navigation";
-export default function LegacyImportPage() { redirect("/cms/nhap-word"); }
+
+export default function LegacyImportPage() {
+  redirect("/cms/them-bai");
+}
