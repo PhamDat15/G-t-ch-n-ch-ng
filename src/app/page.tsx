@@ -61,12 +61,22 @@ function ArticleImage({
 }
 
 export default async function HomePage() {
-  const articles = await prisma.article.findMany({
-    where: { status: "PUBLISHED" },
-    take: 30,
-    orderBy: { publishedAt: "desc" },
-    select: CARD_SELECT,
-  });
+  let articles: any[] = [];
+  try {
+    articles = await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      take: 30,
+      orderBy: { publishedAt: "desc" },
+      select: CARD_SELECT,
+    });
+  } catch {
+    // Dự phòng an toàn nếu cột status chưa kịp tạo trong database lúc build
+    articles = await prisma.article.findMany({
+      take: 30,
+      orderBy: { publishedAt: "desc" },
+      select: CARD_SELECT,
+    });
+  }
 
   const hero = articles.find((article) => article.isHero) ?? articles[0];
   const afterHero = articles.filter((article) => article.id !== hero?.id);
