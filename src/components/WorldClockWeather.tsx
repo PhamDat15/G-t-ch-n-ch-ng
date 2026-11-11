@@ -72,32 +72,32 @@ export default function WorldClockWeather() {
   const activeCity = CITIES[activeCityIdx];
 
   return (
-    <div className="flex items-center space-x-3 text-xs text-slate-600">
+    <div className="flex items-center space-x-3 text-xs text-slate-300">
       {/* Ngày tháng chính */}
-      <span className="font-bold text-[#0A2540]">{currentDateStr || "Đang tải..."}</span>
-      <span className="text-slate-300">|</span>
+      <span className="font-medium text-slate-200">{currentDateStr || "Đang tải..."}</span>
+      <span className="text-slate-600">|</span>
 
       {/* Hiển thị trên màn hình lớn: Hiện 3 thành phố đại diện */}
       <div className="hidden lg:flex items-center space-x-3">
         {CITIES.slice(0, 3).map((item, idx) => (
           <div key={item.city} className="flex items-center space-x-1.5">
-            {idx > 0 && <span className="text-slate-300 mr-2">•</span>}
-            <span className="font-semibold text-slate-800">{item.city}</span>
-            <span className="font-mono text-[#1A56DB] font-bold">
+            {idx > 0 && <span className="text-slate-600 mr-2">•</span>}
+            <span className="text-slate-300">{item.city}</span>
+            <span className="font-mono text-[#d49a37] font-semibold">
               {times[item.city] || "--:--"}
             </span>
-            <span className="text-slate-500 text-[11px]">({item.temp} {item.weather})</span>
+            <span className="text-slate-400 text-[11px]">({item.temp})</span>
           </div>
         ))}
       </div>
 
       {/* Hiển thị trên màn hình vừa và nhỏ: Tự động lướt từng thành phố */}
       <div className="lg:hidden flex items-center space-x-1.5 animate-fade-in">
-        <span className="font-semibold text-slate-800">{activeCity.city}</span>
-        <span className="font-mono text-[#1A56DB] font-bold">
+        <span className="text-slate-300">{activeCity.city}</span>
+        <span className="font-mono text-[#d49a37] font-semibold">
           {times[activeCity.city] || "--:--"}
         </span>
-        <span className="text-slate-500 text-[11px]">({activeCity.temp})</span>
+        <span className="text-slate-400 text-[11px]">({activeCity.temp})</span>
       </div>
     </div>
   );

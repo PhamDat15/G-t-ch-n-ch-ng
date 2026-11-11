@@ -1,18 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-playfair: var(--font-playfair), "Playfair Display", Georgia, serif;
+}
+
 @layer base {
   :root {
     --primary-blue: #175b8f;
     --primary-hover: #2576ae;
-    --navy-header: #123b5d;
-    --accent-blue: #2576ae;
-    --accent-light: #f4f9fc;
+    --navy-header: #0d2238;
+    --gold-accent: #d49a37;
+    --gold-hover: #b58229;
+    --sand-bg: #fdfbf7;
+  }
+
+  * {
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
   }
 
   body {
-    background-color: #ffffff;
+    background-color: #fcfbf8;
     color: #1e293b;
-    font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
@@ -21,21 +33,21 @@
 
   /* Định dạng typography chuẩn báo chí cho phần nội dung */
   .article-body h2 {
-    font-family: var(--font-sans), sans-serif;
-    font-size: 1.65rem;
-    line-height: 2.2rem;
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
+    font-size: 1.85rem;
+    line-height: 2.3rem;
     font-weight: 700;
     color: #0f172a;
     margin-top: 2.25rem;
     margin-bottom: 1.25rem;
-    border-left: 4px solid #1a56db;
+    border-left: 4px solid #d49a37;
     padding-left: 0.85rem;
   }
 
   .article-body h3 {
-    font-family: var(--font-sans), sans-serif;
-    font-size: 1.35rem;
-    line-height: 1.9rem;
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif !important;
+    font-size: 1.5rem;
+    line-height: 2rem;
     font-weight: 700;
     color: #0f172a;
     margin-top: 1.75rem;

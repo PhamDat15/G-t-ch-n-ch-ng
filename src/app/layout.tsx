@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Merriweather, Be_Vietnam_Pro } from "next/font/google";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-// Font tiếng Việt chuyên cho báo chí, hỗ trợ đầy đủ 100% dấu tiếng Việt không bao giờ bị lỗi ô vuông / lỗi dấu
-const beVietnamPro = Be_Vietnam_Pro({
-  weight: ["300", "400", "500", "600", "700", "800"],
+// Sử dụng Playfair Display: font chuẩn của logo "Việt Nam", nét dày đặn, serif thanh đậm rõ ràng và sắc nét
+const playfair = Playfair_Display({
+  weight: ["400", "500", "600", "700", "800", "900"],
   subsets: ["vietnamese", "latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const merriweather = Merriweather({
-  weight: ["300", "400", "700", "900"],
-  subsets: ["vietnamese", "latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -33,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${merriweather.variable} h-full antialiased`}
+      className={`${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-white text-slate-900">
+      <body className="min-h-full flex flex-col font-playfair bg-[#fbfbf9] text-slate-900">
         {children}
       </body>
     </html>
