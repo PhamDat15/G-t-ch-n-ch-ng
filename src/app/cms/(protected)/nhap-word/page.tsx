@@ -1,0 +1,2 @@
+import CmsImportForm from "@/components/CmsImportForm";
+export default function ImportPage() { return <div><p className="text-sm font-bold uppercase tracking-wider text-[#b46b2a]">Công cụ biên tập</p><h1 className="font-serif text-3xl font-black text-[#123b5d]">Nhập bài viết từ Word</h1><p className="mb-6 mt-2 text-sm text-slate-500">Chuyển đổi file .docx thành bài viết và tối ưu hình ảnh tự động.</p><CmsImportForm /></div>; }

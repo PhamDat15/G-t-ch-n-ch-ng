@@ -1,0 +1,4 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import EditArticleForm from "@/components/EditArticleForm";
+export default async function EditArticlePage({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; const [article, categories] = await Promise.all([prisma.article.findUnique({ where: { id } }), prisma.category.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } })]); if (!article) notFound(); return <div><p className="text-sm font-bold uppercase tracking-wider text-[#b46b2a]">Biên tập</p><h1 className="font-serif text-3xl font-black text-[#123b5d]">Chỉnh sửa bài viết</h1><p className="mb-6 mt-2 text-sm text-slate-500">Thay đổi nội dung, chuyên mục và vị trí hiển thị.</p><EditArticleForm article={article} categories={categories} /></div>; }
