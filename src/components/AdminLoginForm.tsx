@@ -35,15 +35,41 @@ export default function AdminLoginForm({ destination }: { destination: string })
       }}
     >
       <div>
-        <label htmlFor="admin-username" className="mb-2 block text-sm font-bold text-slate-700">Tài khoản</label>
-        <input id="admin-username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-[#2576ae]" required />
+        <label htmlFor="admin-username" className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-700">
+          Tên đăng nhập
+        </label>
+        <input 
+          id="admin-username" 
+          autoComplete="username" 
+          value={username} 
+          onChange={(event) => setUsername(event.target.value)} 
+          placeholder="Nhập username của bạn..."
+          className="w-full rounded-xl border border-slate-300 bg-white/80 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#d49a37] focus:ring-2 focus:ring-[#d49a37]/20 shadow-sm" 
+          required 
+        />
       </div>
       <div>
-        <label htmlFor="admin-password" className="mb-2 block text-sm font-bold text-slate-700">Mật khẩu</label>
-        <input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-[#2576ae]" required />
+        <label htmlFor="admin-password" className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-700">
+          Mật khẩu
+        </label>
+        <input 
+          id="admin-password" 
+          type="password" 
+          autoComplete="current-password" 
+          value={password} 
+          onChange={(event) => setPassword(event.target.value)} 
+          placeholder="••••••••"
+          className="w-full rounded-xl border border-slate-300 bg-white/80 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#d49a37] focus:ring-2 focus:ring-[#d49a37]/20 shadow-sm font-mono" 
+          required 
+        />
       </div>
-      {error && <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-      <button disabled={loading} className="w-full rounded-lg bg-[#123b5d] px-5 py-3 font-bold text-white transition hover:bg-[#2576ae] disabled:opacity-60">{loading ? "Đang đăng nhập..." : "Đăng nhập quản trị"}</button>
+      {error && <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700 text-center">{error}</p>}
+      <button 
+        disabled={loading} 
+        className="w-full rounded-xl bg-[#0c1f33] px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#173a5e] disabled:opacity-60 cursor-pointer"
+      >
+        {loading ? "Đang xác thực..." : "Đăng nhập quản trị"}
+      </button>
     </form>
   );
 }
