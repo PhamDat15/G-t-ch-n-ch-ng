@@ -16,6 +16,7 @@ export default async function SearchPage({
   const articles = query
     ? await prisma.article.findMany({
       where: {
+        status: "PUBLISHED",
         OR: [
           { title: { contains: query, mode: "insensitive" } },
           { sapo: { contains: query, mode: "insensitive" } },

@@ -32,9 +32,10 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
     data: { viewCount: { increment: 1 } },
   });
 
-  // Bài viết liên quan cùng chuyên mục
+  // Bài viết liên quan cùng chuyên mục (chỉ hiện bài đã xuất bản)
   const relatedArticles = await prisma.article.findMany({
     where: {
+      status: "PUBLISHED",
       categoryId: article.categoryId,
       id: { not: article.id },
     },

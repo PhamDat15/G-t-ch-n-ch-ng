@@ -13,6 +13,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     where: { slug },
     include: {
       articles: {
+        where: { status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
         select: {
           id: true,

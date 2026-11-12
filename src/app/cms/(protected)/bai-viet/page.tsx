@@ -12,7 +12,7 @@ export default async function CmsArticlesPage({
   const currentUser = await getCurrentUser();
   const isLeader = currentUser?.role === "ADMIN" || currentUser?.role === "EDITOR";
 
-  // Phóng viên chỉ xem bài của mình nếu muốn, hoặc xem tất cả theo quyền
+  // Phóng viên xem bài của mình (hoặc bài có tên tác giả trùng)
   const whereCondition: any = {};
   if (q) {
     whereCondition.title = { contains: q, mode: "insensitive" };
@@ -25,7 +25,10 @@ export default async function CmsArticlesPage({
     }
   }
   if (!isLeader && currentUser) {
-    whereCondition.authorId = currentUser.id;
+    whereCondition.OR = [
+      { authorId: currentUser.id },
+      { author: currentUser.fullName },
+    ];
   }
 
   const articles = (await prisma.article.findMany({
