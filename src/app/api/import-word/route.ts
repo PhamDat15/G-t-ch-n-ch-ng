@@ -119,6 +119,28 @@ export async function POST(req: Request) {
     // Lưu vào CSDL
     const finalThumbnail = customThumbnail || parsed.thumbnail;
 
+    // Đảm bảo tác giả tồn tại trong bảng User nếu có CSDL quan hệ
+    let validAuthorId: string | null = null;
+    try {
+      if (currentUser?.id) {
+        // Tìm hoặc tạo User trong DB để thỏa mãn Foreign Key constraint
+        const dbUser = await prisma.user.upsert({
+          where: { username: currentUser.username || currentUser.id },
+          update: { fullName: currentUser.fullName, role: currentUser.role },
+          create: {
+            username: currentUser.username || currentUser.id,
+            password: "default_password_hash",
+            fullName: currentUser.fullName,
+            role: currentUser.role,
+          },
+        });
+        validAuthorId = dbUser.id;
+      }
+    } catch (e) {
+      console.warn("Không thể liên kết User FK, để null:", e);
+      validAuthorId = null;
+    }
+
     const article = await prisma.article.create({
       data: {
         title: parsed.title,
@@ -127,7 +149,7 @@ export async function POST(req: Request) {
         content: parsed.content,
         thumbnail: finalThumbnail,
         author: author,
-        authorId: currentUser.id,
+        authorId: validAuthorId,
         source: "Tạp chí Việt Nam Travel",
         status: status,
         isHero: finalIsHero,

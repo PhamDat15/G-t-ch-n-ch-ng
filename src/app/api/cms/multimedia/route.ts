@@ -78,6 +78,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Đảm bảo tác giả tồn tại trong bảng User nếu có CSDL quan hệ
+    let validAuthorId: string | null = null;
+    try {
+      if (currentUser?.id) {
+        const dbUser = await prisma.user.upsert({
+          where: { username: currentUser.username || currentUser.id },
+          update: { fullName: currentUser.fullName, role: currentUser.role },
+          create: {
+            username: currentUser.username || currentUser.id,
+            password: "default_password_hash",
+            fullName: currentUser.fullName,
+            role: currentUser.role,
+          },
+        });
+        validAuthorId = dbUser.id;
+      }
+    } catch (e) {
+      console.warn("Không thể liên kết User FK, để null:", e);
+      validAuthorId = null;
+    }
+
     // 5. Lưu vào Database
     const article = await prisma.article.create({
       data: {
@@ -87,7 +108,7 @@ export async function POST(req: NextRequest) {
         content: contentHtml,
         thumbnail,
         author: finalAuthor,
-        authorId: currentUser.id,
+        authorId: validAuthorId,
         status: status,
         isHero: finalIsHero,
         isFeatured: finalIsFeatured,
