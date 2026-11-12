@@ -60,6 +60,7 @@ export default async function CmsArticlesPage({
     prisma.article.count({ where: { ...countWhereBase, status: "PUBLISHED" } }),
   ]);
 
+  // Ô tìm kiếm giữ nguyên tab trạng thái hiện tại
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -79,10 +80,10 @@ export default async function CmsArticlesPage({
         </Link>
       </div>
 
-      {/* Bộ lọc tab trạng thái (Cả Phóng Viên lẫn Trưởng mục đều dùng để lọc xem Lịch sử) */}
+      {/* Bộ lọc tab trạng thái */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         <Link
-          href="/cms/bai-viet"
+          href={`/cms/bai-viet${q ? `?q=${encodeURIComponent(q)}` : ""}`}
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
             !status
               ? "bg-[#123b5d] text-white shadow-sm"
@@ -95,7 +96,7 @@ export default async function CmsArticlesPage({
           </span>
         </Link>
         <Link
-          href="/cms/bai-viet?status=PENDING"
+          href={`/cms/bai-viet?status=PENDING${q ? `&q=${encodeURIComponent(q)}` : ""}`}
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
             status === "PENDING"
               ? "bg-amber-500 text-white shadow-sm"
@@ -108,7 +109,7 @@ export default async function CmsArticlesPage({
           </span>
         </Link>
         <Link
-          href="/cms/bai-viet?status=PUBLISHED"
+          href={`/cms/bai-viet?status=PUBLISHED${q ? `&q=${encodeURIComponent(q)}` : ""}`}
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
             status === "PUBLISHED"
               ? "bg-emerald-600 text-white shadow-sm"
@@ -124,6 +125,7 @@ export default async function CmsArticlesPage({
 
       {/* Ô tìm kiếm */}
       <form className="flex max-w-lg gap-2">
+        {status && <input type="hidden" name="status" value={status} />}
         <input
           name="q"
           defaultValue={q}
@@ -135,9 +137,9 @@ export default async function CmsArticlesPage({
         </button>
       </form>
 
-      {/* Bảng bài viết có quyền duyệt và đảo Headline */}
+      {/* Bảng bài viết */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <ArticleTable initialArticles={articles} isLeader={isLeader} />
+        <ArticleTable initialArticles={articles} isLeader={isLeader} currentFilter={status} />
       </div>
     </div>
   );

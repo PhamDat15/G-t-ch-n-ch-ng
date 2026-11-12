@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -21,13 +21,20 @@ export interface ArticleItem {
 export default function ArticleTable({
   initialArticles,
   isLeader = false,
+  currentFilter,
 }: {
   initialArticles: ArticleItem[];
   isLeader?: boolean;
+  currentFilter?: string;
 }) {
   const [articles, setArticles] = useState<ArticleItem[]>(initialArticles);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const router = useRouter();
+
+  // Khi danh sách bài viết từ server thay đổi (do chuyển trang / đổi tab)
+  useEffect(() => {
+    setArticles(initialArticles);
+  }, [initialArticles]);
 
   // 1. Duyệt bài / Gỡ duyệt (On-air / Pending)
   const handleToggleStatus = async (id: string, currentStatus: string) => {
@@ -45,9 +52,14 @@ export default function ArticleTable({
       });
       const data = await res.json();
       if (data.success) {
-        setArticles((prev) =>
-          prev.map((art) => (art.id === id ? { ...art, status: newStatus as any } : art))
-        );
+        if (currentFilter === "PENDING" || currentFilter === "PUBLISHED") {
+          // Nếu đang ở trong tab cụ thể (vd: Chờ duyệt), khi duyệt xong thì bài viết biến mất khỏi tab này luôn
+          setArticles((prev) => prev.filter((art) => art.id !== id));
+        } else {
+          setArticles((prev) =>
+            prev.map((art) => (art.id === id ? { ...art, status: newStatus as any } : art))
+          );
+        }
         router.refresh();
       } else {
         alert(data.error || "Thao tác thất bại.");
