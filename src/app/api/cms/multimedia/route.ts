@@ -121,9 +121,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-      { error: "Đã xảy ra lỗi khi lưu bài viết Multimedia." },
-      { status: 500 }
-    );
-  }
-}
 
