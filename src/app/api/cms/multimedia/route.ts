@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import slugify from "slugify";
+import { getCurrentUser } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
+    }
+
     const { videoId, title, sapo, author, isHero, isFeatured, customThumbnail } = await req.json();
 
     if (!videoId || !title) {
@@ -12,6 +18,13 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Xác định quyền hạn: Nếu là REPORTER -> Bắt buộc PENDING (chờ duyệt) và không được làm Hero
+    const isLeader = currentUser.role === "ADMIN" || currentUser.role === "EDITOR";
+    const status = isLeader ? "PUBLISHED" : "PENDING";
+    const finalIsHero = isLeader ? Boolean(isHero) : false;
+    const finalIsFeatured = isLeader ? Boolean(isFeatured) : false;
+    const finalAuthor = author || currentUser.fullName || "Phóng viên";
 
     // 1. Tìm hoặc tạo danh mục "Multimedia"
     let category = await prisma.category.findUnique({
@@ -58,7 +71,7 @@ export async function POST(req: NextRequest) {
     `;
 
     // 4. Nếu đặt làm Hero, gỡ Hero cũ
-    if (isHero) {
+    if (finalIsHero) {
       await prisma.article.updateMany({
         where: { isHero: true },
         data: { isHero: false },
@@ -73,9 +86,11 @@ export async function POST(req: NextRequest) {
         sapo: cleanSapo,
         content: contentHtml,
         thumbnail,
-        author: author || "Ban Biên Tập Multimedia",
-        isHero: Boolean(isHero),
-        isFeatured: Boolean(isFeatured),
+        author: finalAuthor,
+        authorId: currentUser.id,
+        status: status,
+        isHero: finalIsHero,
+        isFeatured: finalIsFeatured,
         readingTime: 3,
         categoryId: category.id,
       },
@@ -92,12 +107,20 @@ export async function POST(req: NextRequest) {
         slug: article.slug,
         sapo: article.sapo,
         thumbnail: article.thumbnail,
+        status: article.status,
       },
-      message: "Đăng video Multimedia thành công!",
+      message: isLeader 
+        ? "Đăng video Multimedia lên trang thành công!" 
+        : "Đã gửi video Multimedia lên hệ thống. Bài viết đang chờ Trưởng mục duyệt!",
     });
   } catch (error) {
     console.error("Lỗi khi đăng bài Multimedia:", error);
     return NextResponse.json(
+      { error: "Đã xảy ra lỗi khi lưu bài viết Multimedia." },
+      { status: 500 }
+    );
+  }
+}
       { error: "Đã xảy ra lỗi khi lưu bài viết Multimedia." },
       { status: 500 }
     );

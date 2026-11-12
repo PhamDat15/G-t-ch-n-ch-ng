@@ -87,7 +87,13 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
               <time dateTime={article.publishedAt.toISOString()}>{formattedDate}</time>
             </div>
             <div className="flex items-center space-x-3 font-mono text-xs text-slate-500">
-              <span>{article.readingTime} phút đọc</span>
+              {article.category.slug === "multimedia" ? (
+                <span className="inline-flex items-center gap-1 font-bold text-amber-700 font-sans">
+                  <span>▶</span> Video phóng sự ({article.readingTime} phút xem)
+                </span>
+              ) : (
+                <span>{article.readingTime} phút đọc</span>
+              )}
               <span>•</span>
               <span>{article.viewCount + 1} lượt xem</span>
             </div>

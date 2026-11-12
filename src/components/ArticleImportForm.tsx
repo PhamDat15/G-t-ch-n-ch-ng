@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface ImportResult {
   success: boolean;
@@ -37,6 +38,11 @@ export default function ArticleImportForm() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  // State cho ảnh đại diện Thumbnail tùy chỉnh (Custom Thumbnail Upload)
+  const [customThumbnail, setCustomThumbnail] = useState<string>("");
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+
   // State cho bài viết Word thông thường
   const [file, setFile] = useState<File | null>(null);
 
@@ -45,11 +51,38 @@ export default function ArticleImportForm() {
   const [youtubeVideoId, setYoutubeVideoId] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoSapo, setVideoSapo] = useState("");
-  const [videoThumbnail, setVideoThumbnail] = useState("");
   const [isFetchingYt, setIsFetchingYt] = useState(false);
   const [ytError, setYtError] = useState("");
 
   const isMultimedia = selectedCategory === "multimedia";
+
+  // Hàm xử lý upload ảnh đại diện tùy chỉnh lên Cloudflare R2
+  const handleUploadThumbnail = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const thumbFile = e.target.files?.[0];
+    if (!thumbFile) return;
+
+    setIsUploadingThumb(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", thumbFile);
+
+      const res = await fetch("/api/cms/upload-thumbnail", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Không thể tải ảnh lên");
+      }
+
+      setCustomThumbnail(data.url);
+    } catch (err: unknown) {
+      alert("Lỗi tải ảnh đại diện: " + (err instanceof Error ? err.message : "Thất bại"));
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  };
 
   // Lấy thông tin video từ YouTube API
   const handleFetchYoutubeInfo = async () => {
@@ -75,7 +108,10 @@ export default function ArticleImportForm() {
 
       setYoutubeVideoId(data.videoId);
       setVideoTitle(data.title);
-      setVideoThumbnail(data.thumbnail);
+      // Gán thumbnail mặc định của YouTube nếu người dùng chưa tự up ảnh riêng
+      if (!customThumbnail) {
+        setCustomThumbnail(data.thumbnail);
+      }
       if (data.author) setAuthor(data.author);
       if (!videoSapo) {
         setVideoSapo(`Cùng Việt Nam Travel khám phá video: ${data.title}.`);
@@ -114,7 +150,7 @@ export default function ArticleImportForm() {
           author: author.trim(),
           isHero,
           isFeatured,
-          customThumbnail: videoThumbnail,
+          customThumbnail: customThumbnail || undefined,
         }),
       });
 
@@ -128,7 +164,7 @@ export default function ArticleImportForm() {
       setYoutubeVideoId("");
       setVideoTitle("");
       setVideoSapo("");
-      setVideoThumbnail("");
+      setCustomThumbnail("");
     } catch (err: unknown) {
       setResult({ success: false, error: err instanceof Error ? err.message : "Lỗi khi lưu video." });
     } finally {
@@ -199,6 +235,7 @@ export default function ArticleImportForm() {
             author,
             isHero,
             isFeatured,
+            customThumbnail: customThumbnail || undefined,
           }),
         });
       } else {
@@ -209,6 +246,9 @@ export default function ArticleImportForm() {
         formData.append("author", author);
         formData.append("isHero", String(isHero));
         formData.append("isFeatured", String(isFeatured));
+        if (customThumbnail) {
+          formData.append("customThumbnail", customThumbnail);
+        }
 
         res = await fetch("/api/import-word", {
           method: "POST",
@@ -230,6 +270,7 @@ export default function ArticleImportForm() {
       setResult(data);
       if (data.success) {
         setFile(null);
+        setCustomThumbnail("");
       }
     } catch (error: unknown) {
       setResult({ success: false, error: error instanceof Error ? error.message : "Lỗi mạng khi tải file" });
@@ -247,7 +288,7 @@ export default function ArticleImportForm() {
           Thêm Bài Viết Mới
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          Hỗ trợ nhập bài tự động từ file **Microsoft Word (.docx)** hoặc dán link **Video YouTube** cho chuyên mục Multimedia.
+          Hỗ trợ tải lên ảnh Thumbnail riêng, nhập bài tự động từ file Word (.docx) hoặc link Video YouTube.
         </p>
       </div>
 
@@ -290,12 +331,79 @@ export default function ArticleImportForm() {
         </div>
 
         {/* ------------------------------------------------------------- */}
+        {/* KHỐI ẢNH ĐẠI DIỆN (THUMBNAIL) TÙY CHỌN CHO MỌI LOẠI BÀI VIẾT  */}
+        {/* ------------------------------------------------------------- */}
+        <div className="py-6 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              Ảnh đại diện bài viết (Thumbnail)
+            </label>
+            <span className="text-xs text-slate-500">
+              Tùy chọn: tải ảnh ngang 16:9 sắc nét từ máy tính
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-5">
+            {/* Khung Preview ảnh Thumbnail */}
+            <div className="relative h-28 w-44 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner flex items-center justify-center">
+              {customThumbnail ? (
+                <img
+                  src={customThumbnail}
+                  alt="Thumbnail xem trước"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="text-center p-3 text-slate-400">
+                  <svg className="w-8 h-8 mx-auto mb-1 stroke-current fill-none" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[10px]">Chưa có ảnh bìa</span>
+                </div>
+              )}
+            </div>
+
+            {/* Nút bấm tải ảnh */}
+            <div className="flex-1 space-y-2">
+              <input
+                ref={thumbInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadThumbnail}
+                className="hidden"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => thumbInputRef.current?.click()}
+                  disabled={isUploadingThumb}
+                  className="px-4 py-2 bg-slate-800 text-white font-bold text-xs rounded-lg hover:bg-slate-700 transition disabled:opacity-50 cursor-pointer"
+                >
+                  {isUploadingThumb ? "Đang tải ảnh..." : "Chọn ảnh bìa từ máy tính ↗"}
+                </button>
+                {customThumbnail && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomThumbnail("")}
+                    className="px-3 py-2 border border-slate-300 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-100 transition"
+                  >
+                    Xóa ảnh
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 leading-normal">
+                Nếu không tải ảnh riêng: Hệ thống sẽ tự động dùng ảnh đầu tiên trong file Word hoặc ảnh mặc định từ YouTube.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------------- */}
         {/* KHỐI 1: NẾU LÀ CHUYÊN MỤC MULTIMEDIA (DÁN LINK YOUTUBE)       */}
         {/* ------------------------------------------------------------- */}
         {isMultimedia ? (
           <form onSubmit={handleMultimediaSubmit} className="space-y-6 pt-6">
             <div className="rounded-xl border border-amber-200 bg-[#fffdfa] p-4 text-xs text-amber-900 leading-relaxed">
-              💡 <strong>Chế độ Video Multimedia:</strong> Bạn chỉ cần dán đường link video từ YouTube (kể cả YouTube Shorts), hệ thống sẽ tự động trích xuất tiêu đề, ảnh thumbnail và tích hợp trình phát video trực tiếp.
+              💡 <strong>Chế độ Video Multimedia:</strong> Bạn chỉ cần dán đường link video từ YouTube (kể cả YouTube Shorts), hệ thống sẽ tự động trích xuất tiêu đề, tích hợp trình phát video và dùng ảnh đại diện ở trên.
             </div>
 
             <div>

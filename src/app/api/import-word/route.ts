@@ -6,14 +6,15 @@ import { seedCategories } from "@/lib/categories";
 import { s3Client } from "@/lib/r2";
 import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import slugify from "slugify";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { getCurrentUser } from "@/lib/admin-auth";
 
 // Cho phép function chạy tối đa 60 giây trên Vercel để xử lý các file nhiều ảnh
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return NextResponse.json({ error: "Vui lòng đăng nhập quản trị" }, { status: 401 });
     // Đảm bảo 7 danh mục đã được seed
     await seedCategories();
 
@@ -22,8 +23,13 @@ export async function POST(req: Request) {
     let categorySlug: string | null = null;
     let isHero = false;
     let isFeatured = false;
-    let author = "Ban Biên tập Việt Nam Travel";
+    let author = currentUser.fullName || "Ban Biên tập Việt Nam Travel";
+    let customThumbnail: string | null = null;
     let tempR2Key: string | null = null;
+
+    // Phân quyền: Phóng viên chỉ được tạo bài PENDING (chờ duyệt), không được tự set Hero
+    const isLeader = currentUser.role === "ADMIN" || currentUser.role === "EDITOR";
+    const status = isLeader ? "PUBLISHED" : "PENDING";
 
     if (contentType.includes("application/json")) {
       // Phương thức Upload trực tiếp (Presigned URL) cho file lớn
@@ -33,6 +39,7 @@ export async function POST(req: Request) {
       isHero = !!body.isHero;
       isFeatured = !!body.isFeatured;
       if (body.author) author = body.author;
+      if (body.customThumbnail) customThumbnail = body.customThumbnail;
 
       if (!tempR2Key) {
         return NextResponse.json({ error: "Không tìm thấy file trên R2" }, { status: 400 });
@@ -56,6 +63,8 @@ export async function POST(req: Request) {
       categorySlug = formData.get("categorySlug") as string | null;
       isHero = formData.get("isHero") === "true";
       isFeatured = formData.get("isFeatured") === "true";
+      const customThumbParam = formData.get("customThumbnail") as string | null;
+      if (customThumbParam) customThumbnail = customThumbParam;
       author = (formData.get("author") as string) || "Ban Biên tập Việt Nam Travel";
 
       if (!file) {
@@ -93,7 +102,10 @@ export async function POST(req: Request) {
     }
 
     // Nếu bài viết này được đặt làm Hero, gỡ Hero cũ
-    if (isHero) {
+    const finalIsHero = isLeader ? isHero : false;
+    const finalIsFeatured = isLeader ? isFeatured : false;
+
+    if (finalIsHero) {
       await prisma.article.updateMany({
         where: { isHero: true },
         data: { isHero: false },
@@ -105,17 +117,21 @@ export async function POST(req: Request) {
     const readingTime = Math.max(2, Math.ceil(wordCount / 200));
 
     // Lưu vào CSDL
+    const finalThumbnail = customThumbnail || parsed.thumbnail;
+
     const article = await prisma.article.create({
       data: {
         title: parsed.title,
         slug: uniqueSlug,
         sapo: parsed.sapo,
         content: parsed.content,
-        thumbnail: parsed.thumbnail,
+        thumbnail: finalThumbnail,
         author: author,
+        authorId: currentUser.id,
         source: "Tạp chí Việt Nam Travel",
-        isHero: isHero,
-        isFeatured: isFeatured,
+        status: status,
+        isHero: finalIsHero,
+        isFeatured: finalIsFeatured,
         readingTime: readingTime,
         categoryId: category.id,
       },

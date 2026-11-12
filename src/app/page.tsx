@@ -185,7 +185,14 @@ export default async function HomePage() {
                           {article.title}
                         </h3>
                         <p className="mt-1 text-[11px] font-medium text-slate-400">
-                          <span className="text-[#d49a37] font-semibold">{article.category.name}</span> · {article.readingTime} phút đọc
+                          <span className="text-[#d49a37] font-semibold">{article.category.name}</span> ·{" "}
+                          {article.category.slug === "multimedia" ? (
+                            <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
+                              <span>▶</span> Video phóng sự
+                            </span>
+                          ) : (
+                            `${article.readingTime} phút đọc`
+                          )}
                         </p>
                       </div>
                     </Link>
@@ -260,7 +267,13 @@ export default async function HomePage() {
                     {article.sapo}
                   </p>
                   <p className="mt-auto pt-2 text-[11px] text-slate-400">
-                    {article.readingTime} phút đọc
+                    {article.category.slug === "multimedia" ? (
+                      <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
+                        <span>▶</span> Video phóng sự
+                      </span>
+                    ) : (
+                      `${article.readingTime} phút đọc`
+                    )}
                   </p>
                 </div>
               </article>
@@ -332,7 +345,14 @@ export default async function HomePage() {
                       </p>
                     </div>
                     <p className="mt-2 text-[11px] text-slate-400">
-                      {article.author} · {article.readingTime} phút đọc
+                      {article.author} ·{" "}
+                      {article.category.slug === "multimedia" ? (
+                        <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
+                          <span>▶</span> Video phóng sự
+                        </span>
+                      ) : (
+                        `${article.readingTime} phút đọc`
+                      )}
                     </p>
                   </div>
                 </article>

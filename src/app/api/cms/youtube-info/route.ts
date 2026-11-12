@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
       authorName = data.author_name || "Việt Nam Travel";
     }
 
-    // Lấy thumbnail chất lượng cao nhất của YouTube
-    const thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    // Lấy thumbnail chất lượng cao nhất của YouTube (thử hqdefault trước để đảm bảo 100% video đều có ảnh)
+    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
     return NextResponse.json({
       success: true,
