@@ -153,7 +153,13 @@ export default async function HomePage() {
                         <p className="mt-1 text-[10px] font-medium text-slate-400">
                           <span className="text-[#d49a37] font-semibold">{article.category.name}</span>
                           {" · "}
-                          {article.readingTime} phút đọc
+                          {article.category.slug === "multimedia" ? (
+                            <span className="text-amber-700 font-bold">
+                              {article.readingTime} phút xem
+                            </span>
+                          ) : (
+                            `${article.readingTime} phút đọc`
+                          )}
                         </p>
                       </div>
                     </Link>
@@ -219,7 +225,14 @@ export default async function HomePage() {
                         {article.sapo}
                       </p>
                       <span className="mt-1.5 inline-block text-[10px] font-medium text-slate-400">
-                        {article.author} · {article.readingTime} phút đọc
+                        {article.author} ·{" "}
+                        {article.category.slug === "multimedia" ? (
+                          <span className="text-amber-700 font-bold">
+                            {article.readingTime} phút xem
+                          </span>
+                        ) : (
+                          `${article.readingTime} phút đọc`
+                        )}
                       </span>
                     </div>
                   </Link>

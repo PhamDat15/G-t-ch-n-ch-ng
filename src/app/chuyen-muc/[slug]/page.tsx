@@ -90,7 +90,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   <div className="text-xs text-slate-400 pt-2 flex items-center space-x-2">
                     <span className="font-semibold text-slate-700">{leadArticle.author}</span>
                     <span>•</span>
-                    <span>{leadArticle.readingTime} phút đọc</span>
+                    <span>
+                      {category.slug === "multimedia"
+                        ? `${leadArticle.readingTime} phút xem`
+                        : `${leadArticle.readingTime} phút đọc`}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -122,7 +126,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                     <div className="text-[11px] text-slate-400 flex items-center space-x-2 pt-1">
                       <span>{art.author}</span>
                       <span>•</span>
-                      <span>{art.readingTime} phút đọc</span>
+                      <span>
+                        {category.slug === "multimedia"
+                          ? `${art.readingTime} phút xem`
+                          : `${art.readingTime} phút đọc`}
+                      </span>
                     </div>
                   </article>
                 ))}

@@ -102,7 +102,11 @@ export default async function SearchPage({
                 <div className="text-[11px] text-slate-400 flex items-center space-x-2 pt-3 border-t border-slate-100">
                   <span className="font-semibold text-slate-600">{art.author}</span>
                   <span>•</span>
-                  <span>{art.readingTime} phút đọc</span>
+                  <span>
+                    {art.category.slug === "multimedia"
+                      ? `${art.readingTime} phút xem`
+                      : `${art.readingTime} phút đọc`}
+                  </span>
                 </div>
               </article>
             ))}
