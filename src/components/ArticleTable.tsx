@@ -31,12 +31,11 @@ export default function ArticleTable({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const router = useRouter();
 
-  // Khi danh sách bài viết từ server thay đổi (do chuyển trang / đổi tab)
   useEffect(() => {
     setArticles(initialArticles);
   }, [initialArticles]);
 
-  // 1. Duyệt bài / Gỡ duyệt (On-air / Pending)
+  // 1. Duyệt bài / Hạ bài (On-air / Pending)
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "PUBLISHED" ? "PENDING" : "PUBLISHED";
     setLoadingId(id);
@@ -53,7 +52,6 @@ export default function ArticleTable({
       const data = await res.json();
       if (data.success) {
         if (currentFilter === "PENDING" || currentFilter === "PUBLISHED") {
-          // Nếu đang ở trong tab cụ thể (vd: Chờ duyệt), khi duyệt xong thì bài viết biến mất khỏi tab này luôn
           setArticles((prev) => prev.filter((art) => art.id !== id));
         } else {
           setArticles((prev) =>
@@ -71,7 +69,7 @@ export default function ArticleTable({
     }
   };
 
-  // 2. Đảo Headline (Hero)
+  // 2. Đảo vị trí Headline (Hero)
   const handleToggleHero = async (id: string, currentIsHero: boolean) => {
     setLoadingId(id);
     try {
@@ -89,7 +87,7 @@ export default function ArticleTable({
         setArticles((prev) =>
           prev.map((art) => {
             if (art.id === id) return { ...art, isHero: !currentIsHero };
-            if (!currentIsHero) return { ...art, isHero: false }; // gỡ Hero bài khác
+            if (!currentIsHero) return { ...art, isHero: false };
             return art;
           })
         );
@@ -104,9 +102,9 @@ export default function ArticleTable({
     }
   };
 
-  // 3. Xóa bài
+  // 3. Xóa bài viết
   const handleDelete = async (id: string, title: string) => {
-    const confirmed = window.confirm(`Bạn có chắc chắn muốn gỡ/xóa bài báo: "${title}" không?`);
+    const confirmed = window.confirm(`Bạn có chắc chắn muốn gỡ vĩnh viễn bài báo: "${title}" không?`);
     if (!confirmed) return;
 
     setLoadingId(id);
@@ -130,88 +128,113 @@ export default function ArticleTable({
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full">
       <table className="w-full table-fixed text-left text-xs text-slate-700">
         <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
           <tr>
-            <th className="p-3 w-[32%] min-w-[200px]">Tiêu đề bài viết</th>
-            <th className="p-3 w-[12%] min-w-[90px]">Chuyên mục</th>
-            <th className="p-3 w-[12%] min-w-[80px]">Tác giả</th>
-            <th className="p-3 w-[14%] min-w-[100px]">Trạng thái duyệt</th>
-            <th className="p-3 w-[10%] min-w-[80px]">Vị trí</th>
-            <th className="p-3 w-[20%] min-w-[150px] text-right">Thao tác</th>
+            <th className="py-3 px-4 w-[46%]">Bài viết & Tác giả</th>
+            <th className="py-3 px-3 w-[16%]">Trạng thái</th>
+            <th className="py-3 px-3 w-[16%]">Vị trí</th>
+            <th className="py-3 px-4 w-[22%] text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {articles.length === 0 ? (
             <tr>
-              <td colSpan={6} className="p-8 text-center text-slate-500">
+              <td colSpan={4} className="p-8 text-center text-slate-500">
                 Chưa có bài viết nào trong danh sách.
               </td>
             </tr>
           ) : (
             articles.map((art) => (
-              <tr key={art.id} className="hover:bg-slate-50 transition">
-                <td className="p-3 font-bold text-slate-900">
+              <tr key={art.id} className="hover:bg-slate-50/80 transition">
+                {/* CỘT 1: BÀI VIẾT & TÁC GIẢ (TÍCH HỢP ĐA TẦNG, CLICK TIÊU ĐỀ LÀ XEM BÀI) */}
+                <td className="py-3.5 px-4">
                   <Link
                     href={`/bai-viet/${art.slug}`}
-                    title={art.title}
-                    className="hover:text-[#1A56DB] transition line-clamp-2 leading-relaxed"
+                    target="_blank"
+                    title="Bấm để xem bài viết thực tế"
+                    className="font-bold text-slate-900 hover:text-[#1A56DB] transition line-clamp-2 leading-snug"
                   >
                     {art.title}
                   </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                    <span className="inline-block rounded bg-sky-50 px-2 py-0.2 font-semibold text-[#1A56DB] border border-sky-200">
+                      {art.category.name}
+                    </span>
+                    <span>·</span>
+                    <span className="font-medium text-slate-600 truncate max-w-[140px]">
+                      {art.author}
+                    </span>
+                    <span>·</span>
+                    <span className="text-slate-400">
+                      {new Date(art.publishedAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                    </span>
+                  </div>
                 </td>
-                <td className="p-3">
-                  <span className="inline-block bg-sky-50 text-[#1A56DB] font-semibold px-2 py-0.5 rounded text-[11px] border border-sky-200 truncate max-w-full">
-                    {art.category.name}
-                  </span>
-                </td>
-                <td className="p-3 text-slate-600 truncate">{art.author}</td>
 
-                {/* Cột Trạng thái duyệt */}
-                <td className="p-3">
+                {/* CỘT 2: TRẠNG THÁI KIỂM DUYỆT */}
+                <td className="py-3.5 px-3">
                   {art.status === "PENDING" ? (
-                    <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 font-bold text-[11px] text-amber-800 border border-amber-300 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 font-bold text-[11px] text-amber-800 border border-amber-300">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
                       Chờ duyệt
                     </span>
                   ) : art.status === "DRAFT" ? (
-                    <span className="inline-block rounded bg-slate-100 px-2 py-0.5 text-slate-600 font-medium text-[11px] whitespace-nowrap">
+                    <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-600 font-medium text-[11px]">
                       Bản nháp
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 font-bold text-[11px] text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 font-bold text-[11px] text-emerald-700 border border-emerald-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Đã lên trang
                     </span>
                   )}
                 </td>
 
-                {/* Cột Vị trí / Headline */}
-                <td className="p-3">
+                {/* CỘT 3: VỊ TRÍ & NÚT HEADLINE TRỰC TIẾP (GỘP THÀNH 1 CỘT GỌN GÀNG) */}
+                <td className="py-3.5 px-3">
                   {art.isHero ? (
-                    <span className="inline-block rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-950 shadow-sm whitespace-nowrap">
-                      ★ HERO
-                    </span>
-                  ) : art.isFeatured ? (
-                    <span className="inline-block rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-700 whitespace-nowrap">
-                      NỔI BẬT
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="rounded bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase text-slate-950 shadow-xs">
+                        ★ HERO
+                      </span>
+                      {isLeader && (
+                        <button
+                          onClick={() => handleToggleHero(art.id, true)}
+                          disabled={loadingId === art.id}
+                          title="Hủy bài tiêu điểm Hero"
+                          className="text-[10px] text-slate-400 hover:text-rose-600 underline cursor-pointer"
+                        >
+                          Bỏ
+                        </button>
+                      )}
+                    </div>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    isLeader && (
+                      <button
+                        onClick={() => handleToggleHero(art.id, false)}
+                        disabled={loadingId === art.id}
+                        className="rounded border border-amber-300 bg-amber-50/60 px-2 py-0.5 text-[10px] font-bold text-amber-800 hover:bg-amber-100 transition cursor-pointer"
+                      >
+                        + Headline
+                      </button>
+                    )
                   )}
                 </td>
 
-                {/* Cột Thao tác */}
-                <td className="p-3 text-right whitespace-nowrap space-x-1.5">
-                  {/* Nút Duyệt / Gỡ duyệt (Dành cho Ban Biên Tập / Trưởng mục) */}
+                {/* CỘT 4: THAO TÁC THIẾT YẾU (KHÔNG DƯ THỪA) */}
+                <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                   {isLeader && (
                     <>
                       {art.status !== "PUBLISHED" ? (
                         <button
                           onClick={() => handleToggleStatus(art.id, art.status)}
                           disabled={loadingId === art.id}
-                          className="rounded bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-emerald-700 transition cursor-pointer shadow-sm"
+                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-700 transition cursor-pointer shadow-xs disabled:opacity-50"
                         >
                           Duyệt ✓
                         </button>
@@ -219,49 +242,29 @@ export default function ArticleTable({
                         <button
                           onClick={() => handleToggleStatus(art.id, art.status)}
                           disabled={loadingId === art.id}
-                          title="Hạ bài về trạng thái chờ duyệt"
-                          className="rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition cursor-pointer"
+                          title="Hạ bài về danh sách chờ duyệt"
+                          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50"
                         >
                           Hạ bài
                         </button>
                       )}
-
-                      {/* Nút Đảo Headline */}
-                      <button
-                        onClick={() => handleToggleHero(art.id, art.isHero)}
-                        disabled={loadingId === art.id}
-                        className={`rounded px-1.5 py-1 text-[11px] font-bold transition cursor-pointer ${
-                          art.isHero
-                            ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                            : "border border-[#d49a37] text-[#b88226] hover:bg-[#d49a37] hover:text-white"
-                        }`}
-                      >
-                        {art.isHero ? "Bỏ Hero" : "Đặt Headline"}
-                      </button>
                     </>
                   )}
 
+                  {/* Nút sửa */}
                   <Link
                     href={`/cms/bai-viet/${art.id}`}
-                    className="font-semibold text-sky-700 hover:underline px-1 text-[11px]"
+                    className="inline-block rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 hover:bg-sky-100 transition"
                   >
                     Sửa
                   </Link>
 
-                  <Link
-                    href={`/bai-viet/${art.slug}`}
-                    target="_blank"
-                    className="text-slate-500 hover:underline px-1 text-[11px]"
-                  >
-                    Xem ↗
-                  </Link>
-
-                  {/* Nút Xóa bài (Chỉ Trưởng mục / Admin có quyền xóa) */}
+                  {/* Nút gỡ bài */}
                   {isLeader && (
                     <button
                       onClick={() => handleDelete(art.id, art.title)}
                       disabled={loadingId === art.id}
-                      className="text-rose-600 hover:text-rose-800 font-bold cursor-pointer disabled:opacity-50 transition px-1 text-[11px]"
+                      className="inline-block rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 transition cursor-pointer disabled:opacity-50"
                     >
                       Gỡ
                     </button>

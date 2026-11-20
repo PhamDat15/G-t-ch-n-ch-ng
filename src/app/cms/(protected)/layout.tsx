@@ -28,7 +28,7 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-slate-100 md:flex">
-      <aside className="flex w-full flex-col bg-[#0c1f33] p-5 text-white md:min-h-screen md:w-64 md:fixed">
+      <aside className="flex w-full flex-col bg-[#0c1f33] p-5 text-white md:min-h-screen md:w-60 md:fixed">
         <Link href="/cms" className="font-serif text-xl font-black text-amber-300">
           Việt Nam Travel
         </Link>
@@ -81,7 +81,7 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 p-5 md:ml-64 md:p-8">{children}</main>
+      <main className="min-w-0 flex-1 p-4 md:ml-60 md:p-6 lg:p-7">{children}</main>
     </div>
   );
 }
