@@ -277,13 +277,13 @@ export default async function HomePage() {
                       </div>
                     )}
 
-                    {/* Danh sách 3 tin gạch đầu dòng (Sub-bullets phong cách VnExpress - khoảng cách liền mạch) */}
-                    <div className="sm:col-span-5 flex flex-col justify-start space-y-2.5 divide-y divide-stone-100 sm:border-l sm:border-stone-100 sm:pl-4">
+                    {/* Danh sách 3 tin gạch đầu dòng (Sub-bullets phong cách VnExpress - khoảng cách rộng gấp đôi) */}
+                    <div className="sm:col-span-5 flex flex-col justify-start space-y-5 divide-y divide-stone-100 sm:border-l sm:border-stone-100 sm:pl-5">
                       {blockA.slice(1, 4).map((sub) => (
-                        <div key={sub.id} className="pt-2.5 first:pt-0 group">
-                          <Link href={`/bai-viet/${sub.slug}`} className="flex items-start gap-2">
+                        <div key={sub.id} className="pt-5 first:pt-0 group">
+                          <Link href={`/bai-viet/${sub.slug}`} className="flex items-start gap-2.5">
                             <span className="text-[#d49a37] font-bold text-xs leading-snug">▪</span>
-                            <h5 className="font-serif text-[13px] font-semibold leading-snug text-slate-800 group-hover:text-[#b88226] transition line-clamp-2">
+                            <h5 className="font-serif text-[13px] font-semibold leading-relaxed text-slate-800 group-hover:text-[#b88226] transition line-clamp-2">
                               {sub.title}
                             </h5>
                           </Link>
@@ -326,12 +326,12 @@ export default async function HomePage() {
                       </div>
                     )}
 
-                    <div className="sm:col-span-5 flex flex-col justify-start space-y-2.5 divide-y divide-stone-100 sm:border-l sm:border-stone-100 sm:pl-4">
+                    <div className="sm:col-span-5 flex flex-col justify-start space-y-5 divide-y divide-stone-100 sm:border-l sm:border-stone-100 sm:pl-5">
                       {blockB.slice(1, 4).map((sub) => (
-                        <div key={sub.id} className="pt-2.5 first:pt-0 group">
-                          <Link href={`/bai-viet/${sub.slug}`} className="flex items-start gap-2">
+                        <div key={sub.id} className="pt-5 first:pt-0 group">
+                          <Link href={`/bai-viet/${sub.slug}`} className="flex items-start gap-2.5">
                             <span className="text-[#175b8f] font-bold text-xs leading-snug">▪</span>
-                            <h5 className="font-serif text-[13px] font-semibold leading-snug text-slate-800 group-hover:text-[#b88226] transition line-clamp-2">
+                            <h5 className="font-serif text-[13px] font-semibold leading-relaxed text-slate-800 group-hover:text-[#b88226] transition line-clamp-2">
                               {sub.title}
                             </h5>
                           </Link>
