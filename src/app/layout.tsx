@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Merriweather } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Sử dụng Merriweather: font báo chí chuẩn quốc tế, x-height cao, các chữ đều tăm tắp, nét cân đối và tối ưu hoàn hảo cho tiếng Việt
-const merriweather = Merriweather({
-  weight: ["300", "400", "700", "900"],
+// Sử dụng Inter: font không chân (Sans-serif) chuẩn quốc tế, tối ưu tuyệt vời cho tiếng Việt, hiện đại và sắc nét
+const inter = Inter({
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   subsets: ["vietnamese", "latin"],
-  variable: "--font-merriweather",
+  variable: "--font-inter",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Tạp chí Việt Nam Travel — Chạm tinh hoa, thưởng di sản",
+    default: "Tạp chí Việt Nam Travel",
     template: "%s | Việt Nam Travel",
   },
   description: "Tạp chí điện tử chuyên sâu về du lịch, văn hóa và di sản Việt Nam.",
@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${merriweather.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-merriweather bg-[#fbfbf9] text-slate-900">
+      <body className="min-h-full flex flex-col font-sans bg-[#fbfbf9] text-slate-900">
         {children}
       </body>
     </html>

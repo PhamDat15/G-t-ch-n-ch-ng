@@ -101,13 +101,13 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
           </div>
         </div>
 
-        {/* 3. THANH MENU ĐIỀU HƯỚNG NẰM TRONG NỀN TỐI SANG TRỌNG */}
+        {/* 3. THANH MENU ĐIỀU HƯỚNG NẰM TRONG NỀN TỐI SANG TRỌNG - GIÃN ĐỀU TỪ ĐẦU ĐẾN CUỐI LINE */}
         <nav className={`border-t border-white/10 bg-[#091827]/90 backdrop-blur-md transition-all ${compact ? "fixed top-0 left-0 right-0 z-50 shadow-xl border-b border-white/15 bg-[#091827]/95" : ""}`}>
-          <div className="mx-auto flex max-w-7xl items-center overflow-x-auto px-4 py-0 scrollbar-none">
+          <div className="mx-auto flex max-w-7xl items-stretch justify-between overflow-x-auto px-4 py-0 scrollbar-none w-full">
             {/* Nút Trang chủ nền vàng hổ phách nổi bật */}
             <Link
               href="/"
-              className={`inline-flex items-center justify-center px-6 py-3.5 text-base font-bold transition whitespace-nowrap ${!currentCategory
+              className={`inline-flex items-center justify-center px-5 sm:px-6 py-3.5 text-sm sm:text-base font-bold transition whitespace-nowrap text-center shrink-0 ${!currentCategory
                   ? "bg-[#d49a37] text-slate-900 shadow-md hover:bg-[#b88226]"
                   : "text-slate-200 hover:text-white hover:bg-white/10"
                 }`}
@@ -115,13 +115,13 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
               Trang chủ
             </Link>
 
-            {/* Các chuyên mục */}
+            {/* Các chuyên mục giãn đều ra 2 bên kéo dài từ đầu đến cuối line */}
             {CATEGORIES.map((category) => (
               <Link
                 key={category.slug}
                 href={`/chuyen-muc/${category.slug}`}
-                className={`whitespace-nowrap px-4 sm:px-5 py-3.5 text-[15px] sm:text-base font-bold tracking-normal transition hover:text-amber-300 ${currentCategory === category.slug
-                    ? "text-amber-300 border-b-2 border-amber-400 bg-white/5"
+                className={`flex-1 inline-flex items-center justify-center whitespace-nowrap px-3 sm:px-4 py-3.5 text-sm sm:text-[15px] font-semibold tracking-normal transition text-center hover:text-amber-300 ${currentCategory === category.slug
+                    ? "text-amber-300 border-b-2 border-amber-400 bg-white/5 font-bold"
                     : "text-slate-200 hover:bg-white/5"
                   }`}
               >
