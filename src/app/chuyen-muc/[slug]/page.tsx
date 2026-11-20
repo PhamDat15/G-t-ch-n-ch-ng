@@ -48,9 +48,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <h1 className="text-3xl font-extrabold uppercase tracking-tight text-[#0A2540] font-serif">
               {category.name}
             </h1>
-            <span className="text-xs text-slate-500 font-mono">
-              Tổng số: {articles.length} bài viết
-            </span>
           </div>
           {category.description && (
             <p className="text-sm text-slate-600 mt-2 font-sans">{category.description}</p>

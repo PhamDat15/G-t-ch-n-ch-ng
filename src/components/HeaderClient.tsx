@@ -65,13 +65,10 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
         />
 
         <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 pt-7 pb-6 md:flex-row">
-          {/* Logo Báo & Slogan */}
+          {/* Logo Báo (Đã bỏ slogan) */}
           <Link href="/" className="group text-center md:text-left">
             <span className="block font-serif text-3xl font-black tracking-tight text-[#fbf7ee] transition duration-300 group-hover:text-amber-300 md:text-5xl drop-shadow-md">
               {siteName || "Việt Nam Travel"}
-            </span>
-            <span className="mt-1.5 block text-[11px] font-bold tracking-[0.24em] text-[#d49a37] uppercase drop-shadow">
-              {slogan || "TẠP CHÍ DU LỊCH & DI SẢN VIỆT NAM"}
             </span>
           </Link>
 
@@ -110,7 +107,7 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
             {/* Nút Trang chủ nền vàng hổ phách nổi bật */}
             <Link 
               href="/" 
-              className={`inline-flex items-center justify-center px-6 py-3 text-sm font-bold transition whitespace-nowrap ${
+              className={`inline-flex items-center justify-center px-6 py-3.5 text-base font-bold transition whitespace-nowrap ${
                 !currentCategory 
                   ? "bg-[#d49a37] text-slate-900 shadow-md hover:bg-[#b88226]" 
                   : "text-slate-200 hover:text-white hover:bg-white/10"
@@ -124,7 +121,7 @@ export default function HeaderClient({ currentCategory, siteName, slogan }: { cu
               <Link 
                 key={category.slug} 
                 href={`/chuyen-muc/${category.slug}`} 
-                className={`whitespace-nowrap px-4 py-3 text-sm font-semibold transition hover:text-amber-300 ${
+                className={`whitespace-nowrap px-4 sm:px-5 py-3.5 text-[15px] sm:text-base font-bold tracking-normal transition hover:text-amber-300 ${
                   currentCategory === category.slug 
                     ? "text-amber-300 border-b-2 border-amber-400 bg-white/5" 
                     : "text-slate-200 hover:bg-white/5"
